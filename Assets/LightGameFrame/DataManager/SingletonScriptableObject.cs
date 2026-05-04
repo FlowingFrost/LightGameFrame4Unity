@@ -28,6 +28,11 @@ namespace LightGameFrame.DataManager
     private static string TName => typeof(T).Name;
         private static bool _initialized = false;
 
+        [Tooltip("配置版本号。手动递增，JSON override 低于此值时将被忽略。")]
+        public int configVersion = 0;
+        [HideInInspector]
+        public string configUpdatedAt = "";
+
         /// <summary>
         /// 获取单例实例
         /// </summary>
@@ -44,31 +49,39 @@ namespace LightGameFrame.DataManager
         }
         
         /// <summary>
-        /// 静态方法获取资源路径
+        /// 取命名空间最后一个 segment 作为子目录名，避免不同组件同名配置冲突。
+        /// LightGameFrame.RoadEditor.AnimationConfig → "RoadEditor"
+        /// 无命名空间的类 → null
         /// </summary>
+        private static string GetNamespaceFolder()
+        {
+            string fullName = typeof(T).FullName ?? typeof(T).Name;
+            int lastDot = fullName.LastIndexOf('.');
+            if (lastDot < 0) return null;
+
+            string ns = fullName.Substring(0, lastDot);
+            int secondLastDot = ns.LastIndexOf('.');
+            return secondLastDot > 0 ? ns.Substring(secondLastDot + 1) : ns;
+        }
+
         private static string GetResourcePathStatic()
         {
-            return GetTemplateInfo().resourcePath;
+            // 优先使用 Attribute 显式指定路径
+            var attr = typeof(T).GetCustomAttribute<SingletonConfigAttribute>();
+            if (attr != null) return attr.ResourcePath;
+
+            string folder = GetNamespaceFolder();
+            return folder != null ? $"Data/{folder}/{TName}" : $"Data/{TName}";
         }
 
-        /// <summary>
-        /// 静态方法获取JSON文件名
-        /// </summary>
         private static string GetJsonFileNameStatic()
         {
-            return GetTemplateInfo().jsonFileName;
-        }
-
-        /// <summary>
-        /// 在没有实例时安全获取模板信息（使用特性配置）
-        /// </summary>
-        private static (string resourcePath, string jsonFileName, string typeName) GetTemplateInfo()
-        {
-            string typeName = TName;
+            // 优先使用 Attribute 显式指定路径
             var attr = typeof(T).GetCustomAttribute<SingletonConfigAttribute>();
-            string resourcePath = attr?.ResourcePath ?? $"Data/{typeName}";
-            string jsonFileName = attr?.JsonFileName ?? $"{typeName}.json";
-            return (resourcePath, jsonFileName, typeName);
+            if (attr != null) return attr.JsonFileName;
+
+            string folder = GetNamespaceFolder();
+            return folder != null ? $"{folder}/{TName}.json" : $"{TName}.json";
         }
         /// <summary>
         /// 获取JSON保存路径（使用可写的持久化数据路径）
@@ -121,52 +134,122 @@ namespace LightGameFrame.DataManager
             }
 
             // 从JSON更新数据（无论哪种方式创建的实例）
-            LoadFromJson(_instance, jsonFileName);
+            LoadBestJson(_instance, jsonFileName);
 
             _initialized = true;
             Debug.Log($"[{TName}] 单例初始化完成");
         }
         
         /// <summary>
-        /// 从JSON文件加载并更新数据
+        /// 从多个 JSON 源（StreamingAssets + persistentDataPath）中选出版本最新、
+        /// 且不低于模板 configVersion 的 JSON 应用。
+        /// 版本相同则取 updatedAt 更新的那个。
         /// </summary>
-        private static void LoadFromJson(T instance, string jsonFileName)
+        private static void LoadBestJson(T instance, string jsonFileName)
         {
             if (string.IsNullOrEmpty(jsonFileName)) return;
 
-            string jsonPath = GetJsonLoadPath(jsonFileName);
-            if (!File.Exists(jsonPath))
+            string streamingPath = Path.Combine(Application.streamingAssetsPath, jsonFileName);
+            string persistentPath = GetJsonSavePath(jsonFileName);
+
+            // 收集所有候选 JSON 及其版本信息
+            var candidates = new System.Collections.Generic.List<(string path, int version, string date)>();
+            int baselineVersion = instance.configVersion;
+
+            if (File.Exists(streamingPath))
             {
-                Debug.Log($"[{TName}] JSON文件不存在，使用默认配置: {jsonPath}");
+                var (v, d) = ReadJsonVersion(streamingPath);
+                if (v >= baselineVersion)
+                    candidates.Add((streamingPath, v, d));
+                else
+                    Debug.Log($"[{TName}] StreamingAssets JSON 版本({v})低于模板({baselineVersion})，跳过");
+            }
+
+            if (File.Exists(persistentPath))
+            {
+                var (v, d) = ReadJsonVersion(persistentPath);
+                if (v >= baselineVersion)
+                    candidates.Add((persistentPath, v, d));
+                else
+                    Debug.Log($"[{TName}] 持久化 JSON 版本({v})低于模板({baselineVersion})，跳过");
+            }
+
+            if (candidates.Count == 0)
+            {
+                Debug.Log($"[{TName}] 无有效 JSON，使用模板默认配置");
                 return;
+            }
+
+            // 选最佳：版本最高 → 日期最新
+            var best = candidates[0];
+            for (int i = 1; i < candidates.Count; i++)
+            {
+                var c = candidates[i];
+                if (c.version > best.version ||
+                    (c.version == best.version && string.CompareOrdinal(c.date, best.date) > 0))
+                {
+                    best = c;
+                }
             }
 
             try
             {
-                string jsonContent = File.ReadAllText(jsonPath);
+                string jsonContent = File.ReadAllText(best.path);
                 JsonUtility.FromJsonOverwrite(jsonContent, instance);
-                Debug.Log($"[{TName}] JSON配置已应用: {jsonFileName}");
+                Debug.Log($"[{TName}] 配置已应用: {best.path} (v{best.version}, {best.date})");
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"[{TName}] JSON加载失败: {e.Message}");
+                Debug.LogError($"[{TName}] JSON 加载失败: {e.Message}");
             }
         }
 
         /// <summary>
+        /// 快速读取 JSON 中的版本信息而不完整反序列化。
+        /// </summary>
+        private static (int version, string date) ReadJsonVersion(string path)
+        {
+            string content = File.ReadAllText(path);
+            int version = 0;
+            string date = "";
+
+            int idx = content.IndexOf("\"configVersion\"");
+            if (idx >= 0)
+            {
+                idx = content.IndexOf(':', idx + 15) + 1;
+                while (idx < content.Length && char.IsWhiteSpace(content[idx])) idx++;
+                int end = idx;
+                while (end < content.Length && char.IsDigit(content[end])) end++;
+                int.TryParse(content.Substring(idx, end - idx), out version);
+            }
+
+            idx = content.IndexOf("\"configUpdatedAt\"");
+            if (idx >= 0)
+            {
+                idx = content.IndexOf('"', idx + 18) + 1;
+                int end = content.IndexOf('"', idx);
+                if (end > idx) date = content.Substring(idx, end - idx);
+            }
+
+            return (version, date);
+        }
+
+        /// <summary>
         /// 保存当前配置到JSON文件（保存到可写的持久化目录）
+        /// 保存时自动刷新 configUpdatedAt，但 configVersion 不自增。
         /// </summary>
         public static void SaveToJson()
         {
             if (_instance == null)
             {
-                var info = GetTemplateInfo();
-                Debug.LogError($"[{info.typeName}] 实例未初始化，无法保存");
+                Debug.LogError($"[{TName}] 实例未初始化，无法保存");
                 return;
             }
 
             try
             {
+                _instance.configUpdatedAt = System.DateTime.UtcNow.ToString("O");
+
                 string jsonFileName = GetJsonFileNameStatic();
                 string jsonPath = GetJsonSavePath(jsonFileName);
                 
@@ -229,8 +312,7 @@ namespace LightGameFrame.DataManager
             }
             catch (System.Exception e)
             {
-                var info = GetTemplateInfo();
-                Debug.LogError($"[{info.typeName}] 删除持久化数据失败: {e.Message}");
+                Debug.LogError($"[{TName}] 删除持久化数据失败: {e.Message}");
             }
         }
 

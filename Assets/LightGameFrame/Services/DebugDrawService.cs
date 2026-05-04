@@ -27,8 +27,8 @@ namespace LightGameFrame.Services
     /// <summary>
     /// Debug绘制服务 - 负责持续渲染各种调试图形
     /// </summary>
-    [AutoService(ForceCreate = true)]
-    public class DebugDrawService : ScriptServiceBase<DebugDrawService>
+    [AutoService]
+    public class DebugDrawService : MonoServiceBase<DebugDrawService>
     {
         public override int ServicePriority => 50;
 
@@ -708,7 +708,9 @@ namespace LightGameFrame.Services
         /// <summary>
         /// 静态便捷访问实例
         /// </summary>
-        public static DebugDrawService Instance => ServiceManager.GetOrCreateService<DebugDrawService>();
+        public static DebugDrawService Instance =>
+            RuntimeLocator.GetService<DebugDrawService>()
+            ?? FindObjectOfType<DebugDrawService>();
 
         #endregion
     }

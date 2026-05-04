@@ -1,3 +1,5 @@
+using System;
+
 namespace LightGameFrame.Services
 {
     /// <summary>
@@ -14,6 +16,12 @@ namespace LightGameFrame.Services
         /// 服务是否已初始化
         /// </summary>
         bool IsInitialized { get; }
+
+        /// <summary>
+        /// 显式声明的服务依赖类型列表，用于拓扑排序。
+        /// 纯 C# 服务不应依赖 Mono 服务。
+        /// </summary>
+        Type[] ServiceDependencies { get; }
 
         /// <summary>
         /// 初始化服务
