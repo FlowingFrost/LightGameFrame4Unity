@@ -46,6 +46,12 @@ namespace MusicTogether.MusicSampling.Editor
         // 每个 segIdx 当前高亮的 localNoteIdx（-1 表示未高亮）
         private Dictionary<int, int> _highlightedNotes = new Dictionary<int, int>();
 
+        // Shift 控件
+        private IntegerField _shiftSegment;
+        private Label _shiftSegmentName;
+        private IntegerField _shiftFrom;
+        private IntegerField _shiftTo;
+
         // 平滑滚动状态
         private float _targetScrollX = 0f;
         private float _currentScrollX = 0f;
@@ -154,6 +160,11 @@ namespace MusicTogether.MusicSampling.Editor
             {
                 _markCurrentButton.SetEnabled(false);
             }
+
+            _shiftSegment = rootVisualElement.Q<IntegerField>("shift-segment");
+            _shiftSegmentName = rootVisualElement.Q<Label>("shift-segment-name");
+            _shiftFrom = rootVisualElement.Q<IntegerField>("shift-from");
+            _shiftTo = rootVisualElement.Q<IntegerField>("shift-to");
         }
 
         /// <summary>
@@ -175,6 +186,17 @@ namespace MusicTogether.MusicSampling.Editor
 
             if (_markCurrentButton != null)
                 _markCurrentButton.clicked += OnMarkCurrentButtonClicked;
+
+            var shiftMinus = rootVisualElement.Q<Button>("shift-minus-button");
+            if (shiftMinus != null)
+                shiftMinus.clicked += () => OnShiftClicked(-1);
+
+            var shiftPlus = rootVisualElement.Q<Button>("shift-plus-button");
+            if (shiftPlus != null)
+                shiftPlus.clicked += () => OnShiftClicked(1);
+
+            if (_shiftSegment != null)
+                _shiftSegment.RegisterValueChangedCallback(_ => UpdateShiftSegmentInfo());
 
             if (_timelineSlider != null)
             {
@@ -226,6 +248,8 @@ namespace MusicTogether.MusicSampling.Editor
                 // 启用标记按钮
                 if (_markCurrentButton != null)
                     _markCurrentButton.SetEnabled(true);
+
+                UpdateShiftSegmentInfo();
             }
             else
             {
@@ -420,6 +444,43 @@ namespace MusicTogether.MusicSampling.Editor
         {
             if (_samplingData == null || _audioPlayer == null) return;
             MarkCurrentNotes(_audioPlayer.CurrentTime);
+        }
+
+        /// <summary>
+        /// Shift 按钮点击：对指定段落的标记音符索引执行批量位移。
+        /// </summary>
+        private void OnShiftClicked(int offset)
+        {
+            if (_samplingData == null || _audioPlayer == null) return;
+
+            int segIdx = _shiftSegment?.value ?? 0;
+            int from = _shiftFrom?.value ?? 0;
+            int to = _shiftTo?.value ?? 0;
+
+            _samplingData.ShiftMarkedNoteIndices(segIdx, from, to, offset);
+            EditorUtility.SetDirty(_samplingData);
+
+            _waveformElement?.RefreshAllMarkedStates();
+        }
+
+        /// <summary>
+        /// 根据 shift-segment 字段刷新段名显示和 To 默认值。
+        /// </summary>
+        private void UpdateShiftSegmentInfo()
+        {
+            if (_samplingData == null || _shiftSegment == null) return;
+
+            int segIdx = _shiftSegment.value;
+            if (segIdx >= 0 && segIdx < _samplingData.segments.Count)
+            {
+                var seg = _samplingData.segments[segIdx];
+                _shiftSegmentName.text = $"[{seg.name}]";
+                _shiftTo.value = _samplingData.GetSegmentTotalNotes(segIdx);
+            }
+            else
+            {
+                _shiftSegmentName.text = "(无效)";
+            }
         }
 
         /// <summary>

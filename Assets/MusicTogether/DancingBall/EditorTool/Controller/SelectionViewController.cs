@@ -12,7 +12,8 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
     {
         private readonly EditorCenter _editorCenter;
         private SelectionWindowManager _selectionWindowManager;
-        private ClassicBlockDisplacementUIManager _classicDisplacementManager;
+        private IBlockDisplacementUIManager _currentDisplacementUI;
+        private VisualElement _displacementContainer;
         private BlockDisplacementDataType _defaultDisplacementType = BlockDisplacementDataType.Classic;
         private IBlock _currentBlock;
         private IBlockDisplacementData _currentDisplacementData;
@@ -51,18 +52,14 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
             _selectionWindowManager.RetryBind = RetryBind;
             _selectionWindowManager.DefaultDisplacementTypeChanged = OnDefaultDisplacementTypeChanged;
 
-            var classicRoot = root.Q<VisualElement>("classic-root");
-            if (classicRoot != null)
-            {
-                _classicDisplacementManager = new ClassicBlockDisplacementUIManager(classicRoot);
-                _classicDisplacementManager.DataChanged = OnDisplacementDataChanged;
-            }
+            _displacementContainer = root.Q<VisualElement>("block-displacement-container");
 
             BindEditorCenter();
         }
 
         public void Dispose()
         {
+            _currentDisplacementUI?.Dispose();
             if (_editorCenter != null)
             {
                 _editorCenter.OnSelectionChanged -= _selectionWindowManager.UpdateSelectionInfo;
@@ -126,28 +123,24 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
 
         private void RefreshDisplacementPanel()
         {
-            if (_classicDisplacementManager == null) return;
+            _currentDisplacementUI?.Dispose();
+            _currentDisplacementUI = null;
+            _displacementContainer?.Clear();
 
-            if (_currentBlock == null)
+            if (_currentBlock == null) return;
+
+            var dataToShow = _currentDisplacementData
+                ?? CreateDefaultDisplacementData(_currentBlock.BlockLocalIndex);
+
+            if (dataToShow != null && BlockDisplacementUIFactory.HasCreator(dataToShow))
             {
-                _classicDisplacementManager.SetData(null);
-                return;
+                _currentDisplacementUI = BlockDisplacementUIFactory.Create(_displacementContainer, dataToShow);
+                if (_currentDisplacementUI != null)
+                {
+                    _currentDisplacementUI.SetData(dataToShow);
+                    _currentDisplacementUI.OnDataChanged += OnDisplacementDataChanged;
+                }
             }
-
-            if (_currentDisplacementData is ClassicBlockDisplacementData classicData)
-            {
-                _classicDisplacementManager.SetData(classicData);
-                return;
-            }
-
-            if (_currentDisplacementData == null)
-            {
-                _classicDisplacementManager.SetData(
-                    CreateDefaultDisplacementData(_currentBlock.BlockLocalIndex) as ClassicBlockDisplacementData);
-                return;
-            }
-
-            _classicDisplacementManager.SetData(null);
         }
 
         private IBlockDisplacementData CreateDefaultDisplacementData(int blockLocalIndex)

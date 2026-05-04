@@ -232,6 +232,20 @@ namespace MusicTogether.MusicSampling.Editor
             noteElement.UpdateMarkedState(isMarked);
         }
 
+        /// <summary>刷新所有段落的全部音符标记状态（批量位移后调用）</summary>
+        public void RefreshAllMarkedStates()
+        {
+            for (int segIdx = 0; segIdx < _noteElementsBySegment.Count; segIdx++)
+            {
+                var list = _noteElementsBySegment[segIdx];
+                for (int noteIdx = 0; noteIdx < list.Count; noteIdx++)
+                {
+                    bool isMarked = _data.IsNoteMarked(segIdx, noteIdx);
+                    list[noteIdx].UpdateMarkedState(isMarked);
+                }
+            }
+        }
+
         /// <summary>设置音符高亮状态（当前播放位置）</summary>
         public void SetNoteHighlight(int segIdx, int localNoteIndex, bool isHighlighted)
         {

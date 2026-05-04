@@ -7,8 +7,10 @@ using UnityEngine.UIElements;
 
 namespace MusicTogether.DancingBall.EditorTool.UIManager
 {
-    public class ClassicBlockDisplacementUIManager : UIManagerBase
+    public class ClassicBlockDisplacementUIManager : UIManagerBase, IBlockDisplacementUIManager
     {
+        public const string UxmlPath = "Assets/MusicTogether/DancingBall/UI/BlockDisplacementData/Classic.uxml";
+
         private const string SelectedClass = "db-grid-cell--selected";
         private Label _turnTypeLabel;
         private Label _displacementTypeLabel;
@@ -22,11 +24,17 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
         private ClassicBlockDisplacementData _currentData;
         private bool _suppressNotify;
 
-        public Action<IBlockDisplacementData> DataChanged { get; set; }
+        public VisualElement rootVisualElement => Root;
+        public event Action<IBlockDisplacementData> OnDataChanged;
 
         public ClassicBlockDisplacementUIManager(VisualElement root) : base(root)
         {
             BindElements();
+        }
+
+        public void Dispose()
+        {
+            Root?.parent?.Remove(Root);
         }
 
         public void SetData(IBlockDisplacementData data)
@@ -160,7 +168,7 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
             RefreshDisplay();
             _suppressNotify = false;
 
-            DataChanged?.Invoke(updated);
+            OnDataChanged?.Invoke(updated);
             ClearFocus();
         }
 
@@ -180,7 +188,7 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
             RefreshDisplay();
             _suppressNotify = false;
 
-            DataChanged?.Invoke(updated);
+            OnDataChanged?.Invoke(updated);
             ClearFocus();
         }
 

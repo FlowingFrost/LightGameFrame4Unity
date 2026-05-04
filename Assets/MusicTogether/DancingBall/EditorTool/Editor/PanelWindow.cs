@@ -15,6 +15,8 @@ namespace MusicTogether.DancingBall.EditorTool.Editor
     ///     root => new InspectorViewController().Also(ctrl => ctrl.Bind(root)));
     /// </code>
     /// PanelWindow 接管生命周期，窗口关闭时 Dispose Controller。
+    /// 注意：Domain Reload 后委托会丢失，窗口将空白。
+    /// 建议用专用 EditorWindow 子类替代（如 <see cref="InspectorWindow"/>）。
     /// </summary>
     public class PanelWindow : UnityEditor.EditorWindow
     {
@@ -37,7 +39,7 @@ namespace MusicTogether.DancingBall.EditorTool.Editor
             if (_createController != null)
             {
                 _controller = _createController(rootVisualElement);
-                _createController = null; // 释放引用，允许 GC
+                _createController = null;
             }
         }
 

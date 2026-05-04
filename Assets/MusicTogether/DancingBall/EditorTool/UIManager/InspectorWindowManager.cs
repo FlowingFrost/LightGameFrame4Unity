@@ -60,6 +60,11 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
                     private EnumField _classicBlockDisplacementTypeField;
                     private Button _classicBlockApplyDisplacementTypeButton;
                 private Button _blockDisplacementDeleteCurrentButton;
+            private VisualElement _blockDisplacementShiftSection;
+                private IntegerField _blockDisplacementShiftStartField;
+                private IntegerField _blockDisplacementShiftEndField;
+                private Button _blockDisplacementShiftMinusButton;
+                private Button _blockDisplacementShiftPlusButton;
         private VisualElement _blockMissBindingContainer;
 
         
@@ -96,6 +101,8 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
         public Action BlockDisplacementDeleteRequested { get; set; }
         public Action BlockDisplacementApplyBatchRequested { get; set; }
         public Action<int> BlockDisplacementSelectionChanged { get; set; }
+
+        public Action<int, int, int> BlockDisplacementShiftRequested { get; set; }
 
         public Action RetryBind { get; set; }
 
@@ -139,6 +146,21 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
             {
                 _blockDisplacementDetailSection.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
             }
+        }
+
+        public void SetBlockDisplacementShiftVisible(bool visible)
+        {
+            if (_blockDisplacementShiftSection != null)
+            {
+                _blockDisplacementShiftSection.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
+            }
+        }
+
+        public (int start, int end) GetBlockDisplacementShiftRange()
+        {
+            int start = _blockDisplacementShiftStartField?.value ?? 0;
+            int end = _blockDisplacementShiftEndField?.value ?? 0;
+            return (start, end);
         }
 
         public void SetBindedViewVisible(bool isBinded)
@@ -363,6 +385,12 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
             _blockDisplacementCreateCurrentButton = Root.Q<Button>("block-displacement-create-current");
             _blockDisplacementDeleteCurrentButton = Root.Q<Button>("block-displacement-delete-current");
 
+            _blockDisplacementShiftSection = Root.Q<VisualElement>("block-displacement-shift-section");
+            _blockDisplacementShiftStartField = Root.Q<IntegerField>("block-displacement-shift-start");
+            _blockDisplacementShiftEndField = Root.Q<IntegerField>("block-displacement-shift-end");
+            _blockDisplacementShiftMinusButton = Root.Q<Button>("block-displacement-shift-minus");
+            _blockDisplacementShiftPlusButton = Root.Q<Button>("block-displacement-shift-plus");
+
             _blockDisplacementListView = Root.Q<ListView>("block-displacement-list-view");
             _blockDisplacementEmptyLabel = Root.Q<Label>("block-displacement-list-empty");
             _blockDisplacementCreateButton = Root.Q<Button>("block-displacement-create");
@@ -536,6 +564,24 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
             if (_blockDisplacementApplyBatchButton != null)
             {
                 _blockDisplacementApplyBatchButton.clicked += () => BlockDisplacementApplyBatchRequested?.Invoke();
+            }
+
+            if (_blockDisplacementShiftMinusButton != null)
+            {
+                _blockDisplacementShiftMinusButton.clicked += () =>
+                {
+                    var (start, end) = GetBlockDisplacementShiftRange();
+                    BlockDisplacementShiftRequested?.Invoke(start, end, -1);
+                };
+            }
+
+            if (_blockDisplacementShiftPlusButton != null)
+            {
+                _blockDisplacementShiftPlusButton.clicked += () =>
+                {
+                    var (start, end) = GetBlockDisplacementShiftRange();
+                    BlockDisplacementShiftRequested?.Invoke(start, end, 1);
+                };
             }
 
             if (_retryButton != null)

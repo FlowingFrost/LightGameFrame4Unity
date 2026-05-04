@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -482,6 +483,51 @@ namespace MusicTogether.MusicSampling
             if (segments == null || segIdx < 0 || segIdx >= segments.Count)
                 return false;
             return segments[segIdx].IsNoteMarked(localNoteIdx);
+        }
+
+        // ── 批量位移 ──────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// 批量位移指定段落的标记音符索引。
+        /// </summary>
+        /// <param name="segIdx">段落索引</param>
+        /// <param name="start">范围起始（含）</param>
+        /// <param name="end">范围结束（不含）。start &gt;= end 时视为从 start 到末尾</param>
+        /// <param name="offset">位移量（+1 或 -1）。负值结果会被跳过</param>
+        public void ShiftMarkedNoteIndices(int segIdx, int start, int end, int offset)
+        {
+            if (segments == null || segIdx < 0 || segIdx >= segments.Count) return;
+            if (offset == 0) return;
+
+            var seg = segments[segIdx];
+            int effectiveEnd = start < end ? end : int.MaxValue;
+
+            // 降序取出范围内的索引，避免移除时 index 漂移
+            var toShift = seg.markedNoteIndices
+                .Where(idx => idx >= start && idx < effectiveEnd)
+                .OrderByDescending(idx => idx)
+                .ToList();
+
+            if (toShift.Count == 0) return;
+
+            // 先全部移除
+            foreach (var idx in toShift)
+                seg.markedNoteIndices.Remove(idx);
+
+            // 再添加新索引（冲突：先添加的保留）
+            foreach (var idx in toShift)
+            {
+                int newIdx = idx + offset;
+                if (newIdx < 0) continue;
+                if (!seg.markedNoteIndices.Contains(newIdx))
+                    seg.markedNoteIndices.Add(newIdx);
+            }
+
+            seg.markedNoteIndices.Sort();
+
+#if UNITY_EDITOR
+            UnityEditor.EditorUtility.SetDirty(this);
+#endif
         }
 
         // ── Editor 验证 ───────────────────────────────────────────────────────

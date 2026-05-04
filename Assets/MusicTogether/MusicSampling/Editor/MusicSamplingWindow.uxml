@@ -18,6 +18,15 @@
                 </ui:VisualElement>
                 <ui:Slider name="timeline-slider" low-value="0" high-value="100" class="timeline-slider" />
             </ui:VisualElement>
+            <ui:VisualElement name="shift-controls" class="shift-controls">
+                <ui:Label text="Shift" class="shift-controls__label" />
+                <ui:IntegerField name="shift-segment" label="Segment" value="0" class="shift-field shift-field--narrow" />
+                <ui:Label name="shift-segment-name" text="" class="shift-segment-name" />
+                <ui:IntegerField name="shift-from" label="From" value="0" class="shift-field" />
+                <ui:IntegerField name="shift-to" label="To" value="9999" class="shift-field" />
+                <ui:Button name="shift-minus-button" text="-1" class="shift-button" />
+                <ui:Button name="shift-plus-button" text="+1" class="shift-button shift-button--plus" />
+            </ui:VisualElement>
             <ui:ScrollView name="waveform-container" mode="Horizontal" class="waveform-container">
                 <ui:Label name="hint-label" text="请选择 AudioSamplingData 资源文件" class="hint-label" />
                 <ui:VisualElement name="waveform-element" class="waveform-element">

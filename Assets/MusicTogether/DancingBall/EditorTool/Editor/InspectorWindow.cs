@@ -7,41 +7,58 @@ using UnityEngine.UIElements;
 namespace MusicTogether.DancingBall.EditorTool.Editor
 {
     /// <summary>
-    /// Inspector 面板入口。实际逻辑委托给 InspectorViewController，
-    /// 窗口生命周期由 PanelWindow 管理。
+    /// Inspector 面板窗口。
+    /// 窗口自己负责创建 Controller 和加载 UXML，不受 Domain Reload 影响。
     /// </summary>
-    public static class InspectorWindow
+    public class InspectorWindow : EditorWindow
     {
-        private const string UxmlPath = "Assets/MusicTogether/DancingBall/UI/InspectorWindow.uxml";
+        [SerializeField] private string _uxmlPath = "Assets/MusicTogether/DancingBall/UI/InspectorWindow.uxml";
+
+        private IEditorViewController _controller;
 
         [MenuItem("MusicTogether/DancingBall/Inspector")]
         public static void ShowWindow()
         {
+            var window = GetWindow<InspectorWindow>();
+            window.titleContent = new GUIContent("DancingBall Editor");
+            window.minSize = new Vector2(520, 360);
+            window.Show();
+        }
+
+        private void CreateGUI()
+        {
             var editorCenter = EditorLocator.GetService<EditorCenter>();
-
-            PanelWindow.Show("DancingBall Editor", new Vector2(520, 360), root =>
+            if (editorCenter == null)
             {
-                var visualTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UxmlPath);
-                if (visualTree == null)
-                {
-                    Debug.LogError($"[DancingBallEditorWindow] UXML not found at path: {UxmlPath}");
-                    root.Add(new Label($"UXML not found: {UxmlPath}"));
-                    return null;
-                }
+                rootVisualElement.Add(new Label("EditorCenter not found."));
+                return;
+            }
 
-                visualTree.CloneTree(root);
-                var ctrl = new InspectorViewController(editorCenter);
-                ctrl.Bind(root);
+            var visualTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(_uxmlPath);
+            if (visualTree == null)
+            {
+                Debug.LogError($"[InspectorWindow] UXML not found at path: {_uxmlPath}");
+                rootVisualElement.Add(new Label($"UXML not found: {_uxmlPath}"));
+                return;
+            }
 
-                // Host 负责 Editor 特有的窗口创建（RoadCreateWindow）
-                ctrl.RoadCreateDialogRequested = () =>
-                {
-                    RoadCreateWindow.ShowWindow(editorCenter.selectedRoad,
-                        (name, seg, begin, end) => ctrl.OnRoadCreated(name, seg, begin, end));
-                };
+            visualTree.CloneTree(rootVisualElement);
+            _controller = new InspectorViewController(editorCenter);
+            _controller.Bind(rootVisualElement);
 
-                return ctrl;
-            });
+            // Host 负责 Editor 特有的窗口创建（RoadCreateWindow）
+            var ctrl = (InspectorViewController)_controller;
+            ctrl.RoadCreateDialogRequested = () =>
+            {
+                RoadCreateWindow.ShowWindow(editorCenter.selectedRoad,
+                    (name, seg, begin, end) => ctrl.OnRoadCreated(name, seg, begin, end));
+            };
+        }
+
+        private void OnDisable()
+        {
+            _controller?.Dispose();
+            _controller = null;
         }
     }
 }

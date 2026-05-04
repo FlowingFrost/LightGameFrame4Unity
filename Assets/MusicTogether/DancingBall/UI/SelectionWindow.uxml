@@ -1,5 +1,4 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <ui:Template name="ClassicBlockDisplacementPanel" src="project://database/Assets/MusicTogether/DancingBall/UI/BlockDisplacementData/Classic.uxml?fileID=9197481963319205126&amp;guid=b859fd2cb885d2f4e8fde00b1b88d570&amp;type=3#Classic" />
     <Style src="project://database/Assets/MusicTogether/DancingBall/UI/DancingBallEditor_Common.uss?fileID=7433441132597879392&amp;guid=1dcdcf878d12b194da051df375cde7a8&amp;type=3#DancingBallEditor_Common" />
     <ui:VisualElement name="selection-root" class="db-panel">
         <ui:VisualElement name="binded-view" style="flex-grow: 1; display: flex;">
@@ -20,7 +19,7 @@
                     <ui:EnumField name="selection-default-displacement-type" label="默认位移数据" class="db-field" />
                 </ui:VisualElement>
                 <ui:VisualElement name="selection-right" style="flex-grow: 0; align-self: flex-start;">
-                    <ui:Instance template="ClassicBlockDisplacementPanel" name="selection-classic-panel" />
+                    <ui:VisualElement name="block-displacement-container" />
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>

@@ -175,6 +175,15 @@ namespace MusicTogether.DancingBall.Data
         private void ApplyBottomTile(List<ITileHolder> TileHolders) => ApplyTile(TileHolders, false, false);
         private void ApplyEmptyTile(List<ITileHolder> TileHolders) => ApplyTile(TileHolders, false, false);
 
+        public IBlockDisplacementData CloneWithNewIndex(int newBlockLocalIndex)
+        {
+            return new ClassicBlockDisplacementData(newBlockLocalIndex)
+            {
+                turnType = this.turnType,
+                displacementType = this.displacementType
+            };
+        }
+
         public int GetBlockIndexDelta()
         {
             if (displacementType == DisplacementType.Down) return 0;

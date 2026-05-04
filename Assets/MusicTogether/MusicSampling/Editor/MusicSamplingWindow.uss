@@ -288,6 +288,71 @@
     border-left-color: rgba(100, 100, 100, 0.3);
 }
 
+.shift-controls {
+    flex-direction: row;
+    padding: 4px 10px;
+    background-color: rgb(56, 56, 56);
+    align-items: center;
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(72, 72, 72);
+}
+
+.shift-controls__label {
+    font-size: 11px;
+    color: rgb(200, 200, 200);
+    -unity-font-style: bold;
+    margin-right: 8px;
+    white-space: nowrap;
+}
+
+.shift-segment-name {
+    font-size: 10px;
+    color: rgb(160, 200, 255);
+    margin-right: 10px;
+    white-space: nowrap;
+    min-width: 60px;
+}
+
+.shift-field--narrow {
+    width: 56px;
+    margin-right: 4px;
+    flex-grow: 0;
+}
+
+.shift-field {
+    width: 120px;
+    margin-right: 6px;
+    flex-grow: 0;
+}
+
+.shift-button {
+    width: 36px;
+    height: 20px;
+    font-size: 12px;
+    -unity-font-style: bold;
+    margin-left: 3px;
+    background-color: rgb(80, 80, 80);
+    color: white;
+    border-width: 0;
+    border-radius: 3px;
+}
+
+.shift-button:hover {
+    background-color: rgb(100, 100, 100);
+}
+
+.shift-button:active {
+    background-color: rgb(60, 60, 60);
+}
+
+.shift-button--plus {
+    background-color: rgb(50, 120, 50);
+}
+
+.shift-button--plus:hover {
+    background-color: rgb(60, 140, 60);
+}
+
 .main-panel {
     flex-grow: 1;
 }
@@ -311,4 +376,11 @@
 
 .hidden {
     display: none;
+}
+
+.unity-base-field__label {
+    min-width: auto;
+    min-height: auto;
+    flex-shrink: 0;
+    flex-grow: 0;
 }

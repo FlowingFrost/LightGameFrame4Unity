@@ -13,7 +13,8 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
     {
         private readonly EditorCenter _editorCenter;
         private InspectorWindowManager _windowManager;
-        private ClassicBlockDisplacementUIManager _classicBlockDisplacementManager;
+        private IBlockDisplacementUIManager _currentDisplacementUI;
+        private VisualElement _displacementContainer;
 
         /// <summary>
         /// Host 在此事件中打开创建道路的对话框（如 Editor 下的 RoadCreateWindow）。
@@ -29,12 +30,9 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
         public void Bind(VisualElement root)
         {
             _windowManager = new InspectorWindowManager(root);
-            var classicRoot = root.Q<VisualElement>("classic-root");
-            if (classicRoot != null)
-            {
-                _classicBlockDisplacementManager = new ClassicBlockDisplacementUIManager(classicRoot);
-                _classicBlockDisplacementManager.DataChanged = OnClassicDisplacementDataChanged;
-            }
+            _displacementContainer = root.Q<VisualElement>("block-displacement-container");
+            _currentDisplacementUI?.Dispose();
+            _currentDisplacementUI = null;
 
             _windowManager.RetryBind = RetryBind;
             BindEditorCenter();
@@ -42,6 +40,7 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
 
         public void Dispose()
         {
+            _currentDisplacementUI?.Dispose();
             if (_editorCenter != null)
             {
                 _editorCenter.OnRoadSelectionChanged -= OnRoadSelected;
@@ -87,6 +86,7 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
             _windowManager.BlockDisplacementSelectionChanged = BlockDisplacementSelectionChanged;
             _windowManager.RoadRefreshRequested = RoadRefreshRequested;
             _windowManager.BlockDisplacementApplyBatchRequested = BlockDisplacementApplyBatchRequested;
+            _windowManager.BlockDisplacementShiftRequested = BlockDisplacementShiftRequested;
             _windowManager.RoadCreateRequested = RoadCreateRequested;
             _windowManager.RoadDeleteRequested = RoadDeleteRequested;
             _windowManager.RoadDuplicateRequested = RoadDuplicateRequested;
@@ -152,6 +152,7 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
                 road.RoadData.targetSegmentIndex);
             _windowManager.BindRoadList(_editorCenter.targetMap.SceneData.roadDataList, _editorCenter.SelectedRoadIndex);
             _windowManager.BindBlockDisplacementList(road.RoadData.blockDisplacementDataList, _editorCenter.SelectedBlockIndex);
+            _windowManager.SetBlockDisplacementShiftVisible(true);
         }
 
         private void OnBlockSelected(IBlock block, IBlockDisplacementData displacementData)
@@ -166,21 +167,33 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
             {
                 _windowManager.SetBlockDisplacementCreateVisible(true);
                 _windowManager.SetBlockDisplacementDetailVisible(false);
-                _classicBlockDisplacementManager?.SetData(null);
+                ClearDisplacementUI();
             }
             else
             {
                 _windowManager.SetBlockDisplacementCreateVisible(false);
                 _windowManager.SetBlockDisplacementDetailVisible(true);
-                switch (displacementData)
-                {
-                    case ClassicBlockDisplacementData classicData:
-                        _classicBlockDisplacementManager?.SetData(classicData);
-                        break;
-                    default:
-                        _classicBlockDisplacementManager?.SetData(null);
-                        break;
-                }
+                ShowDisplacementUI(displacementData);
+            }
+        }
+
+        private void ClearDisplacementUI()
+        {
+            _currentDisplacementUI?.Dispose();
+            _currentDisplacementUI = null;
+            _displacementContainer?.Clear();
+        }
+
+        private void ShowDisplacementUI(IBlockDisplacementData data)
+        {
+            ClearDisplacementUI();
+            if (data == null || !BlockDisplacementUIFactory.HasCreator(data)) return;
+
+            _currentDisplacementUI = BlockDisplacementUIFactory.Create(_displacementContainer, data);
+            if (_currentDisplacementUI != null)
+            {
+                _currentDisplacementUI.SetData(data);
+                _currentDisplacementUI.OnDataChanged += OnDisplacementDataChanged;
             }
         }
 
@@ -251,6 +264,16 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
             }
 
             _editorCenter.selectedRoad.OnBlockDisplacementRuleChanged();
+            _windowManager.BindBlockDisplacementList(
+                _editorCenter.selectedRoad.RoadData.blockDisplacementDataList,
+                _editorCenter.SelectedBlockIndex);
+        }
+
+        private void BlockDisplacementShiftRequested(int start, int end, int offset)
+        {
+            if (!VerifyRoad()) return;
+            if (_editorCenter.selectedRoad?.RoadData == null) return;
+            _editorCenter.ShiftBlockDisplacementIndices(start, end, offset);
             _windowManager.BindBlockDisplacementList(
                 _editorCenter.selectedRoad.RoadData.blockDisplacementDataList,
                 _editorCenter.SelectedBlockIndex);
@@ -348,7 +371,7 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
             _editorCenter.selectedRoad.ModifyTargetRoadDataName(value);
         }
 
-        private void OnClassicDisplacementDataChanged(IBlockDisplacementData data)
+        private void OnDisplacementDataChanged(IBlockDisplacementData data)
         {
             if (!VerifyRoad() || data == null) return;
             _editorCenter.selectedRoad.ModifyDisplacementData(data.BlockIndex_Local, data);

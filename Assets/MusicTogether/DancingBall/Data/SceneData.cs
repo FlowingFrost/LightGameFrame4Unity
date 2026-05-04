@@ -96,6 +96,49 @@ namespace MusicTogether.DancingBall.Data
         }
 
         /// <summary>
+        /// 批量平移指定范围内的 BlockDisplacement 索引。
+        /// start &lt; end: 平移 [start, end) 范围内的条目。
+        /// start >= end: 平移 [start, BlockCount) 范围内的条目。
+        /// 新索引 &lt; 0 的条目被跳过（保持原地）。
+        /// 目标位置已有条目时覆盖。
+        /// </summary>
+        public void ShiftBlockDisplacementIndices(int start, int end, int offset)
+        {
+            if (offset == 0) return;
+
+            int effectiveEnd = start < end ? end : int.MaxValue;
+
+            // 收集范围内的条目（降序排列避免 index 冲突）
+            var toShift = blockDisplacementDataList
+                .Where(d => d.BlockIndex_Local >= start && d.BlockIndex_Local < effectiveEnd)
+                .OrderByDescending(d => d.BlockIndex_Local)
+                .ToList();
+
+            var toRemove = new List<IBlockDisplacementData>();
+            var toAdd = new List<IBlockDisplacementData>();
+
+            foreach (var data in toShift)
+            {
+                int newIndex = data.BlockIndex_Local + offset;
+                if (newIndex < 0) continue;          // 跳过负值
+                if (newIndex == data.BlockIndex_Local) continue; // 无需变更
+                toRemove.Add(data);
+                toAdd.Add(data.CloneWithNewIndex(newIndex));
+            }
+
+            // 批量移除旧条目
+            foreach (var data in toRemove)
+            {
+                Remove_BlockData(data.BlockIndex_Local);
+            }
+            // 批量写入新条目（覆盖冲突）
+            foreach (var data in toAdd)
+            {
+                AddOrReplace_BlockData(data);
+            }
+        }
+
+        /// <summary>
         /// 移除 Block 位移数据（封装 Remove_BlockData）。
         /// </summary>
         public bool RemoveBlockDisplacementData(int blockLocalIndex)

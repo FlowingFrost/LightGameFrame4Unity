@@ -336,10 +336,10 @@ namespace MusicTogether.DancingBall.Player
                     }
                     //previousMotionPointTime = PreviousDataTime;
                 }
-                else if (currentTime > nextData.Time)
+                /*else if (currentTime > nextData.Time)
                 {
                     GotoNextData();
-                }
+                }*/
             }
 
             //超时切换

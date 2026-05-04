@@ -115,6 +115,9 @@ namespace MusicTogether.DancingBall.Scene
                     throw new InvalidOperationException($"[ClassicRoad.RefreshRoadBlocks] 数据无效，Map={Map != null}, CachedRoadData={cachedRoadData != null}, RoadName={RoadName}");
                 }
 
+                // 清理已销毁的 Block（DestroyImmediate 后接口引用无法被 == null 检测）
+                blocks.RemoveAll(b => b is UnityEngine.Object obj && obj == null);
+
                 int blockCount = Mathf.Max(0, RoadData.BlockCount);
 
                 // 去重：保留 blockLocalIndex 最小的

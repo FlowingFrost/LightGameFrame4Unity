@@ -14,5 +14,6 @@ namespace MusicTogether.DancingBall.Data
         //public bool HasDisplacementRule { get; } 取消这个设计
         public void ApplyDisplacementRule(List<IBlock> targetBlocks);
         public int GetBlockIndexDelta();
+        public IBlockDisplacementData CloneWithNewIndex(int newBlockLocalIndex);
     }
 }
