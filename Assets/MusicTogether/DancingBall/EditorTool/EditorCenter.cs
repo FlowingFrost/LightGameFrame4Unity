@@ -1,16 +1,16 @@
 using System;
 using System.Collections.Generic;
+using LightGameFrame.Services;
 using MusicTogether.DancingBall.Data;
 using MusicTogether.DancingBall.Player;
 using MusicTogether.DancingBall.Scene;
-using Unity.VisualScripting;
 using UnityEngine;
 
 namespace MusicTogether.DancingBall.EditorTool
 {
-    public class EditorCenter
+    [AutoService(Mode = AutoServiceMode.Dual)]
+    public class EditorCenter : GameServiceBase<EditorCenter>
     {
-        public static EditorCenter Instance { get; private set; }
         public IMap targetMap;
         public int SelectedRoadIndex { get; private set; }
         public int SelectedBlockIndex { get; private set; }
@@ -27,24 +27,64 @@ namespace MusicTogether.DancingBall.EditorTool
         public Action<IRoad> OnRoadSelectionChanged;
         public Action<IBlock, IBlockDisplacementData> OnBlockSelectionChanged;
         public Action<GameObject> LookAtObject;
-    public Action<List<RoadData>> OnRoadListChanged;
-    public Action<List<IBlockDisplacementData>> OnBlockDisplacementListChanged;
-        
-        public void Setup(IMap targetMap, BallPlayer player, int selectedRoadIndex, int selectedBlockIndex)
+        public Action<List<RoadData>> OnRoadListChanged;
+        public Action<List<IBlockDisplacementData>> OnBlockDisplacementListChanged;
+
+        public bool IsBound => targetMap != null;
+        public bool IsPlayerBound => player != null;
+
+        protected override void OnInitialize()
         {
-            this.targetMap = targetMap;
+            TryAutoBind();
+        }
+
+        public bool TryAutoBind()
+        {
+            if (targetMap == null)
+                targetMap = FindMapInScene();
+            if (player == null)
+                player = GameObject.FindObjectOfType<BallPlayer>();
+
+            if (targetMap != null)
+                RefreshSelection();
+
+            return IsBound;
+        }
+
+        public void Bind(IMap map, BallPlayer player, int roadIndex = 0, int blockIndex = 0)
+        {
+            targetMap = map;
             this.player = player;
-            SelectedRoadIndex = selectedRoadIndex;
-            SelectedBlockIndex = selectedBlockIndex;
-            Instance = this;
+            SelectedRoadIndex = roadIndex;
+            SelectedBlockIndex = blockIndex;
             RefreshSelection();
         }
-        public void Cleanup()
+
+        public void Unbind()
         {
-            if (Instance == this)
+            targetMap = null;
+            player = null;
+            selectedRoad = null;
+            selectedBlock = null;
+            selectedDisplacementData = null;
+            SelectedRoadIndex = 0;
+            SelectedBlockIndex = 0;
+        }
+
+        private static IMap FindMapInScene()
+        {
+            var allObjects = Resources.FindObjectsOfTypeAll<GameObject>();
+            foreach (var go in allObjects)
             {
-                Instance = null;
+                if (!go.scene.isLoaded) continue;
+                var components = go.GetComponents<Component>();
+                foreach (var component in components)
+                {
+                    if (component is IMap map)
+                        return map;
+                }
             }
+            return null;
         }
 
         public void PreviousBlock()
@@ -122,16 +162,15 @@ namespace MusicTogether.DancingBall.EditorTool
                 SendMessage("Selected block is null.");
                 return;
             }
-            
+
             OnSelectionChanged?.Invoke(SelectedRoadIndex, SelectedBlockIndex);
             LookAtObject?.Invoke(selectedBlock.Transform.gameObject);
         }
-        
+
         //操作功能
         public void MapRebuildRoadsRequested() { targetMap.RebuildRoads(); RefreshSelection(); }
         public void MapRefreshAllRoadsRequested() { targetMap.RefreshAllRoads(); RefreshSelection(); }
 
-        // CRUD helpers
         public bool CreateRoadFromSelection()
         {
             if (targetMap?.SceneData == null) return false;

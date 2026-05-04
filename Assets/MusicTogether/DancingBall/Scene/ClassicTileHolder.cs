@@ -10,12 +10,12 @@ namespace MusicTogether.DancingBall.Scene
         public float tileThickness = 0.2f;
         public Transform tileParent;
         public Transform bottomTile, forwardTile, backwardTile;
-        public void SetTileActive(bool forward, bool backward, bool bottom = true)
+        public void SetTileActive(bool forward, bool backward)//必须保证Bottom是存在的
         {
             if (tileParent == null) return;
             if (forwardTile != null) forwardTile.gameObject.SetActive(forward);
             if (backwardTile != null) backwardTile.gameObject.SetActive(backward);
-            if (bottomTile != null) bottomTile.gameObject.SetActive(bottom);
+            if (bottomTile != null) bottomTile.gameObject.SetActive(true);
         }
 
         /// <summary>
@@ -23,39 +23,16 @@ namespace MusicTogether.DancingBall.Scene
         /// </summary>
         public List<MovementData> GetTileMovementDatum(double currentBlockTime, double singleBlockDuration, bool blockNeedTap)
         {
-            int activeTileCount = 0;
-            if (forwardTile != null && forwardTile.gameObject.activeSelf) activeTileCount++;
-            if (bottomTile != null && bottomTile.gameObject.activeSelf) activeTileCount++;
-            if (backwardTile != null && backwardTile.gameObject.activeSelf) activeTileCount++;
-            
             List<MovementData> datum = new List<MovementData>();
-            if (backwardTile != null && backwardTile.gameObject.activeSelf)
-            {
-                datum.Add(GenerateMovementData(backwardTile, datum.Count));
-            }
-            if (bottomTile != null && bottomTile.gameObject.activeSelf)
-            {
-                datum.Add(GenerateMovementData(bottomTile, datum.Count));
-            }
-            if (forwardTile != null && forwardTile.gameObject.activeSelf)
-            {
-                datum.Add(GenerateMovementData(forwardTile, datum.Count));
-            }
+            if (backwardTile != null && backwardTile.gameObject.activeSelf) datum.Add(new MovementData(false, currentBlockTime, backwardTile, tileThickness));
+            datum.Add(new MovementData(blockNeedTap, currentBlockTime, bottomTile, tileThickness));//Bottom Tile必须存在且始终启用。
+            if (forwardTile != null && forwardTile.gameObject.activeSelf) datum.Add(new MovementData(false, currentBlockTime, forwardTile, tileThickness));
 
-            MovementData GenerateMovementData(Transform tileTransform, int currentListCount)
+            const float segmentWidthRate = 0.2f;
+            for (int i = 0; i < datum.Count; i++)
             {
-                return new MovementData(
-                    currentListCount == 0 ? blockNeedTap : false, 
-                    activeTileCount switch
-                    {
-                        0 => currentBlockTime,
-                        1 => currentBlockTime,
-                        2 => currentBlockTime - singleBlockDuration*0.1 + currentListCount*singleBlockDuration*0.2,
-                        3 => currentBlockTime - singleBlockDuration*0.1 + currentListCount*singleBlockDuration*0.1,
-                        _ => currentBlockTime,
-                    }, 
-                    tileTransform, 
-                    tileThickness);
+                datum[i].Time = currentBlockTime - singleBlockDuration * segmentWidthRate / 2 +
+                                singleBlockDuration * segmentWidthRate / (datum.Count + 1) * (i + 1);
             }
             return datum;
         }

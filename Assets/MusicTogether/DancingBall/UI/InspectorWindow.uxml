@@ -2,6 +2,7 @@
     <ui:Template name="MapEditorPanel" src="project://database/Assets/MusicTogether/DancingBall/UI/InspectorWindow/MapEditorPanel.uxml?fileID=9197481963319205126&amp;guid=76ce77ce6b484e64ea4121da45c6607a&amp;type=3#MapEditorPanel" />
     <ui:Template name="RoadEditorPanel" src="project://database/Assets/MusicTogether/DancingBall/UI/InspectorWindow/RoadEditorPanel.uxml?fileID=9197481963319205126&amp;guid=30c237320fff28249ad12c7b439eaa5a&amp;type=3#RoadEditorPanel" />
     <ui:Template name="BlockEditorPanel" src="project://database/Assets/MusicTogether/DancingBall/UI/InspectorWindow/BlockEditorPanel.uxml?fileID=9197481963319205126&amp;guid=5a4569a1f5b0d484b8f076e2178eb15c&amp;type=3#BlockEditorPanel" />
+    <Style src="project://database/Assets/MusicTogether/DancingBall/UI/DancingBallEditor_Common.uss?fileID=7433441132597879392&amp;guid=1dcdcf878d12b194da051df375cde7a8&amp;type=3#DancingBallEditor_Common" />
     <ui:VisualElement name="editor-root" style="flex-grow: 1;">
         <ui:VisualElement name="binded-view" style="flex-grow: 1; display: flex;">
             <ui:ScrollView name="editor-scroll" style="flex-grow: 1;">

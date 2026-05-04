@@ -16,11 +16,12 @@ namespace MusicTogether.DancingBall.Data
         public enum DisplacementType { None, Up, Down, ForwardUp, ForwardDown }
         
         [OdinSerialize]public int BlockIndex_Local { get; private set; }
-        public TurnType turnType;
-        public DisplacementType displacementType;
+        [OdinSerialize]public TurnType turnType;
+        [OdinSerialize]public DisplacementType displacementType;
         
         public bool HasDisplacementRule => turnType != TurnType.None && displacementType != DisplacementType.None;
 
+        private ClassicBlockDisplacementData() { }
         public ClassicBlockDisplacementData(int BlockLocalIndex)
         {
             this.BlockIndex_Local = BlockLocalIndex;
@@ -85,7 +86,7 @@ namespace MusicTogether.DancingBall.Data
 
 
                 Upward:
-                    ApplyTile(new List<ITileHolder> { rootBlock.TileHolder }, false, true, true);
+                    ApplyTile(new List<ITileHolder> { rootBlock.TileHolder }, false, true);
                     ApplyBottomTile(targetBlocks.Skip(1).Select(b => b.TileHolder).ToList());
                     ApplyLineDisplacement(transformList, startPosition, previousRotation, deltaRotation);
                     break;
@@ -103,13 +104,13 @@ namespace MusicTogether.DancingBall.Data
                     break;
                 UpwardStair:
                     var holdersUS = targetBlocks.Select(b => b.TileHolder).ToList();
-                    ApplyTile(holdersUS, true, false, true);
+                    ApplyTile(holdersUS, true, false);
                     ApplyBottomTile(new List<ITileHolder> { holdersUS.Last() });
                     ApplyStairDisplacement(transformList, startPosition, previousRotation * deltaRotation, true);
                     break;
                 DownStair:
                     var holdersDS = targetBlocks.Select(b => b.TileHolder).ToList();
-                    ApplyTile(holdersDS, false, true, true);
+                    ApplyTile(holdersDS, false, true);
                     ApplyBottomTile(new List<ITileHolder> { holdersDS.First() });
                     ApplyStairDisplacement(transformList, startPosition, previousRotation * deltaRotation, false);
                     break;
@@ -162,17 +163,17 @@ namespace MusicTogether.DancingBall.Data
             }
         }
 
-        private void ApplyTile(List<ITileHolder> TileHolders, bool forward, bool backward, bool bottom)
+        private void ApplyTile(List<ITileHolder> TileHolders, bool forward, bool backward)
         {
             if (TileHolders == null || TileHolders.Count == 0) return;
             foreach (var TileHolder in TileHolders)
             {
-                TileHolder.SetTileActive(forward, backward, bottom);
+                TileHolder.SetTileActive(forward, backward);
             }
         }
 
-        private void ApplyBottomTile(List<ITileHolder> TileHolders) => ApplyTile(TileHolders, false, false, true);
-        private void ApplyEmptyTile(List<ITileHolder> TileHolders) => ApplyTile(TileHolders, false, false, false);
+        private void ApplyBottomTile(List<ITileHolder> TileHolders) => ApplyTile(TileHolders, false, false);
+        private void ApplyEmptyTile(List<ITileHolder> TileHolders) => ApplyTile(TileHolders, false, false);
 
         public int GetBlockIndexDelta()
         {

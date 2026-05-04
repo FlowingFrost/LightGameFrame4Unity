@@ -1,8 +1,8 @@
-using MusicTogether.General;
+using MusicTogether.DancingBall.Player;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
-namespace MusicTogether.DancingBall.Player
+namespace MusicTogether.DancingBall.SceneElements
 {
     public class ClassicClickTip : MonoBehaviour, IClickTipObject
     {

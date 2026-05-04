@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using MusicTogether.DancingBall.Scene;
+using MusicTogether.DancingBall.SceneElements;
 using MusicTogether.LevelManagement;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -33,7 +34,6 @@ namespace MusicTogether.DancingBall.Player
         [SerializeField] private IMap map;
         [SerializeField] private float ballRadius;
         [SerializeField] private AnimationCurve motionCorrectionCurve;
-        [SerializeField] private AnimationEventPlayer animationEventPlayer;
         
         private int currentRoadIndex = 0;
         private int currentDataIndex = 0;
@@ -42,7 +42,7 @@ namespace MusicTogether.DancingBall.Player
         private MovementData CurrentData => CurrentRoad.MovementDatum[currentDataIndex];
         private MovementData previousData, nextData;
         private double CurrentDataTime => CurrentData.Time;
-        private double PreviousDataTime => GetPreviousData(out var data)? data.Time : 0;
+        private double PreviousDataTime => previousData.Time;
         private bool IsRoadIndexOutOfRange(int roadIndex) => roadIndex < 0 || roadIndex >= map.Roads.Count;
         private bool IsDataIndexOutOfCurrentRange(int dataIndex) => dataIndex < 0 || dataIndex >= CurrentRoad.MovementDatum.Count;
         private bool IsDataIndexOutOfRange(int roadIndex, int dataIndex)
@@ -68,7 +68,7 @@ namespace MusicTogether.DancingBall.Player
 
         private bool DetectInput() => Input.GetMouseButtonDown(0);
 
-        private void RecordPreviousMotionPoint()
+        protected virtual void RecordPreviousMotionPoint()
         {
             previousMotionPointTime = Time;
             previousMotionPointPosition = transform.position;
@@ -333,7 +333,6 @@ namespace MusicTogether.DancingBall.Player
                     if (previousData == null || PreviousDataTime < currentTime)
                     {
                         GotoNextData();
-                        animationEventPlayer.NotifyBlockClicked(currentRoadIndex, currentDataIndex, currentTime);
                     }
                     //previousMotionPointTime = PreviousDataTime;
                 }
@@ -376,13 +375,6 @@ namespace MusicTogether.DancingBall.Player
                 }
             }
         }
-
-        
-        private int clickTipReadingRoadIndex;
-        private int clickTipReadingBlockIndex;
-        [SerializeField] private GameObject clickTipPrefab;
-        private List<IClickTipObject> activeClickTips = new List<IClickTipObject>();
-        private List<IClickTipObject> unusedClickTips = new List<IClickTipObject>();
         
         public void Update()
         {

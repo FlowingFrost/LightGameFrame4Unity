@@ -4,6 +4,7 @@ using MusicTogether.DancingBall.Data;
 using UnityEngine;
 using MusicTogether.DancingBall.Player;
 using MusicTogether.DancingBall.EditorTool;
+using MusicTogether.DancingBall.SceneElements;
 
 namespace MusicTogether.DancingBall.Scene
 {
@@ -12,7 +13,7 @@ namespace MusicTogether.DancingBall.Scene
     /// </summary>
     public interface ITileHolder
     {
-        public void SetTileActive(bool forward, bool backward, bool bottom = true);
+        public void SetTileActive(bool forward, bool backward);
         /// <summary>
         /// 返回所有已启用的地板Transform和他们的厚度。
         /// </summary>
@@ -66,7 +67,7 @@ namespace MusicTogether.DancingBall.Scene
         public double RoadBeginTime { get; }
         public double RoadEndTime { get; }
         public List<MovementData> MovementDatum { get; }
-        public List<IAnimationEventData> AnimationEventDatum { get; }
+        public List<IAnimationData> AnimationEventDatum { get; }
         //函数
         public void Init(IMap map, RoadData roadData, GameObject blockPrefab);
         

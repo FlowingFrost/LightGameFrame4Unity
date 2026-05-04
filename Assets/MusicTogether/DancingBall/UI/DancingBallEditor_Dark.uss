@@ -18,6 +18,15 @@
 
 /* 通用类沿用亮色主题结构，仅变量不同，以下为必要的暗色特有调整 */
 
+/* 暗色滚动条 — 默认状态比亮色更明显一些 */
+.unity-scroller--vertical .unity-scroller__thumb {
+    background-color: rgb(80, 85, 92);
+}
+
+.unity-scroller--horizontal .unity-scroller__thumb {
+    background-color: rgb(80, 85, 92);
+}
+
 .db-status-tag {
     padding: 2px 8px;
     border-radius: 999px;

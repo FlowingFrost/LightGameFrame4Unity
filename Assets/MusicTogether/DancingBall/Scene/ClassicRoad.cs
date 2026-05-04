@@ -4,6 +4,7 @@ using System.Linq;
 using MusicTogether.DancingBall.Data;
 using MusicTogether.DancingBall.EditorTool;
 using MusicTogether.DancingBall.Player;
+using MusicTogether.DancingBall.SceneElements;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEditor;
@@ -52,9 +53,9 @@ namespace MusicTogether.DancingBall.Scene
         public double RoadBeginTime => roadBeginTime;
         public double RoadEndTime => roadEndTime;
         [SerializeField] [ReadOnly] private List<MovementData> movementDatum = new List<MovementData>();
-        [SerializeField] [ReadOnly] private List<IAnimationEventData> animationEventDatum = new List<IAnimationEventData>();
+        [SerializeField] [ReadOnly] private List<IAnimationData> animationEventDatum = new List<IAnimationData>();
         public List<MovementData> MovementDatum => movementDatum;
-        public List<IAnimationEventData> AnimationEventDatum => animationEventDatum;
+        public List<IAnimationData> AnimationEventDatum => animationEventDatum;
         //运行数据
         [SerializeField] [ReadOnly] private int dirtyLevel;
         //表达式
