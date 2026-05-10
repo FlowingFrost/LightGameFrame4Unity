@@ -16,4 +16,9 @@ namespace MusicTogether.DancingBall.Data
         public int GetBlockIndexDelta();
         public IBlockDisplacementData CloneWithNewIndex(int newBlockLocalIndex);
     }
+    
+    public interface ITileStyleData
+    {
+        public GameObject TilePrefab { get; }
+    }
 }

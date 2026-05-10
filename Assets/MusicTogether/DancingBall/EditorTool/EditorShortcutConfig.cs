@@ -15,6 +15,11 @@ namespace MusicTogether.DancingBall.EditorTool
         public KeyCode nextBlock = KeyCode.RightArrow;
         public KeyCode sprint = KeyCode.LeftControl;
 
+        [Header("Road Operations")]
+        public KeyCode truncateRoad = KeyCode.T;
+        public KeyCode truncateAndCreateRoad = KeyCode.Y;
+        public KeyCode continueCreateRoad = KeyCode.N;
+
         [Header("TurnType Shortcuts")]
         public KeyCode setTurnTypeNone = KeyCode.S;
         public KeyCode setTurnTypeForward = KeyCode.W;

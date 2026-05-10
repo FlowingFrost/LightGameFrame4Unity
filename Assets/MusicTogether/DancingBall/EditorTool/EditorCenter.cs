@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using LightGameFrame.Services;
+using MusicTogether.DancingBall.EditorTool.Controller;
 using MusicTogether.DancingBall.Data;
 using MusicTogether.DancingBall.Player;
 using MusicTogether.DancingBall.Scene;
@@ -33,10 +34,50 @@ namespace MusicTogether.DancingBall.EditorTool
         public bool IsBound => targetMap != null;
         public bool IsPlayerBound => player != null;
 
+        private EditorShortcutDispatcher _dispatcher;
+        private object _activeInputHandler;
+
+        public EditorShortcutDispatcher Dispatcher => _dispatcher;
+
         protected override void OnInitialize()
         {
+            _dispatcher = new EditorShortcutDispatcher(this);
+            _dispatcher.LoadFromConfig();
             TryAutoBind();
+#if UNITY_EDITOR
+            UnityEditor.SceneManagement.EditorSceneManager.activeSceneChanged += OnActiveSceneChanged;
+#endif
         }
+
+        /// <summary>抢占式注册：后来的直接覆盖。</summary>
+        public void ClaimInput(object handler)
+        {
+            _activeInputHandler = handler;
+        }
+
+        public void ReleaseInput(object handler)
+        {
+            if (_activeInputHandler == handler) _activeInputHandler = null;
+        }
+
+        /// <summary>按键中转入口，仅活跃输入源的键会被处理。</summary>
+        public bool ProcessKey(KeyCode key, object sender)
+        {
+            if (_activeInputHandler != null && _activeInputHandler != sender) return false;
+            return _dispatcher.ProcessKey(key);
+        }
+
+#if UNITY_EDITOR
+        private void OnActiveSceneChanged(UnityEngine.SceneManagement.Scene previousScene, UnityEngine.SceneManagement.Scene newScene)
+        {
+            Unbind();
+            TryAutoBind();
+            if (IsBound)
+            {
+                RefreshSelection();
+            }
+        }
+#endif
 
         public bool TryAutoBind()
         {
@@ -121,6 +162,13 @@ namespace MusicTogether.DancingBall.EditorTool
         public void RefreshSelection()
         {
             OnSelectionChanged?.Invoke(SelectedRoadIndex, SelectedBlockIndex);
+
+            // 场景切换或外部销毁后 targetMap 可能已过期
+            if (IsUnityObjectDestroyed(targetMap))
+            {
+                TryAutoBind();
+            }
+
             if (targetMap == null)
             {
                 SendMessage("Target map is not set.");
@@ -129,21 +177,8 @@ namespace MusicTogether.DancingBall.EditorTool
 
             if (targetMap.Roads == null || targetMap.Roads.Count == 0)
             {
-                // targetMap 可能已过期（外部重建后 map 实例被替换），尝试重新绑定
-                if (IsUnityObjectDestroyed(targetMap))
-                {
-                    TryAutoBind();
-                    if (targetMap == null || targetMap.Roads == null || targetMap.Roads.Count == 0)
-                    {
-                        SendMessage("Target map is not set or has no roads.");
-                        return;
-                    }
-                }
-                else
-                {
-                    SendMessage("Target map has no roads.");
-                    return;
-                }
+                SendMessage("Target map has no roads.");
+                return;
             }
 
             if (IsRoadIndexOutOfRange)
@@ -342,6 +377,171 @@ namespace MusicTogether.DancingBall.EditorTool
             selectedRoad.OnBlockDisplacementRuleChanged();
             RefreshSelection();
             OnBlockDisplacementListChanged?.Invoke(selectedRoad.RoadData.blockDisplacementDataList);
+            return true;
+        }
+
+        // ---- 快捷键驱动：TurnType / DisplacementType ----
+
+        public bool SetSelectedBlockTurnType(ClassicBlockDisplacementData.TurnType turnType)
+        {
+            if (selectedRoad?.RoadData == null || selectedBlock == null) return false;
+            var data = GetOrCreateClassicDisplacementData();
+            if (data == null) return false;
+
+            data.turnType = turnType;
+            selectedRoad.OnBlockDisplacementRuleChanged();
+            RefreshSelection();
+            OnBlockDisplacementListChanged?.Invoke(selectedRoad.RoadData.blockDisplacementDataList);
+            return true;
+        }
+
+        public bool SetSelectedBlockDisplacementType(ClassicBlockDisplacementData.DisplacementType displacementType)
+        {
+            if (selectedRoad?.RoadData == null || selectedBlock == null) return false;
+            var data = GetOrCreateClassicDisplacementData();
+            if (data == null) return false;
+
+            data.displacementType = displacementType;
+            selectedRoad.OnBlockDisplacementRuleChanged();
+            RefreshSelection();
+            OnBlockDisplacementListChanged?.Invoke(selectedRoad.RoadData.blockDisplacementDataList);
+            return true;
+        }
+
+        private ClassicBlockDisplacementData GetOrCreateClassicDisplacementData()
+        {
+            int index = selectedBlock.BlockLocalIndex;
+            selectedRoad.RoadData.Get_BlockData(index, out var existing);
+
+            if (existing is ClassicBlockDisplacementData classic)
+                return classic;
+
+            var newData = new ClassicBlockDisplacementData(index);
+            selectedRoad.RoadData.AddOrReplace_BlockData(newData);
+            return newData;
+        }
+
+        // ---- 截断与继续创建 ----
+
+        /// <summary>
+        /// 以当前选中的 Block 为界，截断 Road。该 Block 的 noteID 成为新的 NoteEndIndex。
+        /// 超出部分的 displacement 数据被移除。
+        /// </summary>
+        public bool TruncateRoadAtSelectedBlock()
+        {
+            if (selectedRoad?.RoadData == null || selectedBlock == null) return false;
+
+            int blockLocalIndex = selectedBlock.BlockLocalIndex;
+            int noteID = selectedRoad.RoadData.noteBeginIndex + blockLocalIndex;
+            if (noteID >= selectedRoad.RoadData.noteEndIndex) return false;
+
+            // ModifyNoteEndIndex → RecoverBlocks 会销毁重建 Block，提前捕获 index
+            selectedRoad.ModifyNoteEndIndex(noteID);
+
+            var list = selectedRoad.RoadData.blockDisplacementDataList;
+            if (list != null)
+            {
+                list.RemoveAll(d => d.BlockIndex_Local > blockLocalIndex);
+            }
+
+            selectedRoad.OnBlockDisplacementRuleChanged();
+            RefreshSelection();
+            OnBlockDisplacementListChanged?.Invoke(selectedRoad.RoadData.blockDisplacementDataList);
+            OnRoadListChanged?.Invoke(targetMap.SceneData.roadDataList);
+            return true;
+        }
+
+        /// <summary>
+        /// 截断当前 Road 并在截断点后创建新 Road。若选中 Block 已在末尾则退化为从末尾继续创建。
+        /// 新 Road 定位在选中 Block 的位置，使用与选中 Block 相同的朝向。
+        /// </summary>
+        public bool TruncateAndCreateRoad()
+        {
+            if (selectedRoad?.RoadData == null || selectedBlock == null) return false;
+            if (targetMap?.SceneData == null) return false;
+
+            int noteID = selectedRoad.RoadData.noteBeginIndex + selectedBlock.BlockLocalIndex;
+            int originalEndIndex = selectedRoad.RoadData.noteEndIndex;
+            int segmentIndex = selectedRoad.RoadData.targetSegmentIndex;
+            string originalRoadName = selectedRoad.RoadData.roadName;
+            Vector3 scale = selectedRoad.RoadData.localScale;
+
+            // 在任何修改前捕获位置 —— ModifyNoteEndIndex → RecoverBlocks 会销毁 Block
+            var mapT = targetMap.Transform;
+            Vector3 spliceWorldPos = selectedBlock.Transform.position;
+            Quaternion spliceWorldRot = selectedBlock.Transform.rotation;
+            Vector3 newPos = mapT.InverseTransformPoint(spliceWorldPos);
+            Quaternion newRot = Quaternion.Inverse(mapT.rotation) * spliceWorldRot;
+
+            bool canTruncate = noteID < originalEndIndex;
+
+            if (canTruncate)
+            {
+                if (!TruncateRoadAtSelectedBlock()) return false;
+                // TruncateRoadAtSelectedBlock 末尾已调用 RefreshSelection，selectedRoad/selectedBlock 已是最新引用
+            }
+
+            int newNoteBegin = canTruncate ? noteID : originalEndIndex;
+            int newNoteEnd = originalEndIndex;
+
+            targetMap.RecoverRoads();
+            var sceneData = targetMap.SceneData;
+            string suffix = canTruncate ? "_Split" : "_Next";
+            string newName = GetUniqueRoadName(sceneData, $"{originalRoadName}{suffix}");
+            var newRoadData = sceneData.CreateRoadData(newName, segmentIndex, newNoteBegin, newNoteEnd);
+            if (newRoadData == null) return false;
+
+            newRoadData.loaclPosition = newPos;
+            newRoadData.loaclRotation = newRot;
+            newRoadData.localScale = scale;
+
+            targetMap.RecoverRoads();
+            RefreshSelection();
+            OnBlockDisplacementListChanged?.Invoke(selectedRoad.RoadData.blockDisplacementDataList);
+            OnRoadListChanged?.Invoke(sceneData.roadDataList);
+            return true;
+        }
+
+        /// <summary>
+        /// 从当前选中 Road 末尾继续创建新 Road。
+        /// 新 Road 使用相同 Segment，NoteBeginIndex = 当前 Road 的 NoteEndIndex。
+        /// </summary>
+        public bool ContinueCreateRoad()
+        {
+            if (selectedRoad?.RoadData == null) return false;
+            if (targetMap?.SceneData == null) return false;
+            if (selectedRoad.Blocks == null || selectedRoad.Blocks.Count == 0) return false;
+
+            var sceneData = targetMap.SceneData;
+            var template = selectedRoad.RoadData;
+            int segmentIndex = template.targetSegmentIndex;
+            int noteBegin = template.noteEndIndex;
+            string newName = GetUniqueRoadName(sceneData, $"{template.roadName}_Next");
+
+            var created = sceneData.CreateRoadData(newName, segmentIndex, noteBegin, noteBegin);
+            if (created == null) return false;
+
+            created.localScale = template.localScale;
+
+            // 定位在前一个 Road 末尾 Block 的位置和旋转
+            var lastBlock = selectedRoad.Blocks[selectedRoad.Blocks.Count - 1];
+            if (lastBlock != null && !IsUnityObjectDestroyed(lastBlock))
+            {
+                var mapT = targetMap.Transform;
+                Vector3 worldPos = lastBlock.Transform.position;
+                Quaternion worldRot = lastBlock.Transform.rotation;
+                created.loaclPosition = mapT.InverseTransformPoint(worldPos);
+                created.loaclRotation = Quaternion.Inverse(mapT.rotation) * worldRot;
+            }
+            else
+            {
+                created.loaclPosition = template.loaclPosition;
+                created.loaclRotation = template.loaclRotation;
+            }
+
+            targetMap.RecoverRoads();
+            RefreshSelection();
+            OnRoadListChanged?.Invoke(sceneData.roadDataList);
             return true;
         }
 

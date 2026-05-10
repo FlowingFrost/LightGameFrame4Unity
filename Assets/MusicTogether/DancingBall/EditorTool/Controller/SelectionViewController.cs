@@ -19,30 +19,27 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
         private IBlockDisplacementData _currentDisplacementData;
 
         private bool _toolEnabled = true;
-
-        private readonly Dictionary<KeyCode, Action> _shortcuts = new();
+        private bool _hadExistingData;
 
         public SelectionViewController(EditorCenter editorCenter)
         {
             _editorCenter = editorCenter;
+        }
 
-            // 默认快捷键绑定
-            _shortcuts[KeyCode.LeftArrow] = () => _editorCenter?.PreviousBlock();
-            _shortcuts[KeyCode.RightArrow] = () => _editorCenter?.NextBlock();
+        public void LoadShortcutsFromConfig()
+        {
+            _editorCenter?.Dispatcher?.LoadFromConfig();
         }
 
         public void SetShortcut(KeyCode key, Action action)
         {
-            _shortcuts[key] = action;
+            // 快捷键现已统一由 EditorShortcutDispatcher 管理，此方法保留仅为接口兼容。
         }
 
         public void OnKeyDown(KeyCode key)
         {
             if (!_toolEnabled) return;
-            if (_shortcuts.TryGetValue(key, out var action))
-            {
-                action?.Invoke();
-            }
+            _editorCenter?.ProcessKey(key, this);
         }
 
         public void Bind(VisualElement root)
@@ -66,7 +63,6 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
                 _editorCenter.OnBlockSelectionChanged -= OnBlockSelectionChanged;
                 _editorCenter.LookAtObject -= LookAt;
             }
-            _shortcuts.Clear();
         }
 
         private void RetryBind()
@@ -107,7 +103,9 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
         /// </summary>
         public void RefreshHint()
         {
-            string hint = _toolEnabled ? "← / → 切换" : "已禁用";
+            string hint = _toolEnabled
+                ? _editorCenter?.Dispatcher?.HintText ?? "← / → 切换"
+                : "已禁用";
             _selectionWindowManager?.SetHint(hint);
             _selectionWindowManager?.SetEnabledState(_toolEnabled);
         }
@@ -116,8 +114,15 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
 
         private void OnBlockSelectionChanged(IBlock block, IBlockDisplacementData data)
         {
+            bool blockChanged = _currentBlock != block;
             _currentBlock = block;
             _currentDisplacementData = data;
+
+            if (blockChanged)
+            {
+                _hadExistingData = data != null;
+            }
+
             RefreshDisplacementPanel();
         }
 
@@ -167,6 +172,14 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
         private void OnDisplacementDataChanged(IBlockDisplacementData data)
         {
             if (data == null || _editorCenter?.selectedRoad == null) return;
+
+            if (!_hadExistingData && data is ClassicBlockDisplacementData classic
+                && classic.turnType == ClassicBlockDisplacementData.TurnType.None
+                && classic.displacementType == ClassicBlockDisplacementData.DisplacementType.None)
+            {
+                return;
+            }
+
             _editorCenter.selectedRoad.ModifyDisplacementData(data.BlockIndex_Local, data);
             _editorCenter.RefreshSelection();
         }
@@ -182,7 +195,7 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
             var sceneView = UnityEditor.SceneView.lastActiveSceneView;
             if (sceneView == null) return;
 
-            if (TryGetExpandedBounds(go, 3.0f, out var bounds))
+            if (TryGetExpandedBounds(go, 7.0f, out var bounds))
             {
                 sceneView.Frame(bounds, false);
             }

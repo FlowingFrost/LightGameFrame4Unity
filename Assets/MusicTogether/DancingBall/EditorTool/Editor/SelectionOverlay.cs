@@ -12,8 +12,8 @@ namespace MusicTogether.DancingBall.EditorTool.Editor
     {
         private const string SelectionUxmlPath = "Assets/MusicTogether/DancingBall/UI/SelectionWindow.uxml";
         private SelectionViewController _ctrl;
+        private EditorCenter _editorCenter;
 
-        private bool _toolEnabled = true;
         private int _controlId = -1;
 
         private EditorApplication.CallbackFunction _updateCallback;
@@ -32,6 +32,7 @@ namespace MusicTogether.DancingBall.EditorTool.Editor
                 EditorApplication.update -= _updateCallback;
                 _updateCallback = null;
             }
+            _editorCenter?.ReleaseInput(this);
             _ctrl?.Dispose();
             base.OnWillBeDestroyed();
         }
@@ -48,11 +49,13 @@ namespace MusicTogether.DancingBall.EditorTool.Editor
 
             visualTree.CloneTree(root);
 
-            var editorCenter = EditorLocator.GetService<EditorCenter>();
-            _ctrl = new SelectionViewController(editorCenter);
+            _editorCenter = EditorLocator.GetService<EditorCenter>();
+            _editorCenter?.ClaimInput(this);
+
+            _ctrl = new SelectionViewController(_editorCenter);
+            _ctrl.LoadShortcutsFromConfig();
             _ctrl.Bind(root);
 
-            // Controller 内部已默认注册 ←/→ 快捷键
             _updateCallback = () => _ctrl?.RefreshHint();
             EditorApplication.update += _updateCallback;
 
@@ -69,10 +72,8 @@ namespace MusicTogether.DancingBall.EditorTool.Editor
 
             Event e = Event.current;
             if (e == null || e.type != EventType.KeyDown) return;
-            if (!_toolEnabled) return;
 
-            _ctrl?.OnKeyDown(e.keyCode);
-            if (e.keyCode == KeyCode.LeftArrow || e.keyCode == KeyCode.RightArrow)
+            if (_editorCenter != null && _editorCenter.ProcessKey(e.keyCode, this))
                 e.Use();
         }
     }

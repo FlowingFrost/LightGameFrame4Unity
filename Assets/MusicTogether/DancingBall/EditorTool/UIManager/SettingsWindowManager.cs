@@ -19,6 +19,9 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
         private EnumField _settingsDisplacementDownField;
         private EnumField _settingsDisplacementForwardUpField;
         private EnumField _settingsDisplacementForwardDownField;
+        private EnumField _settingsTruncateRoadField;
+        private EnumField _settingsTruncateAndCreateField;
+        private EnumField _settingsContinueCreateField;
 
         public Action ShortcutSettingsSaved { get; set; }
 
@@ -49,6 +52,10 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
             _settingsDisplacementDownField?.SetValueWithoutNotify(config.setDisplacementTypeDown);
             _settingsDisplacementForwardUpField?.SetValueWithoutNotify(config.setDisplacementTypeForwardUp);
             _settingsDisplacementForwardDownField?.SetValueWithoutNotify(config.setDisplacementTypeForwardDown);
+
+            _settingsTruncateRoadField?.SetValueWithoutNotify(config.truncateRoad);
+            _settingsTruncateAndCreateField?.SetValueWithoutNotify(config.truncateAndCreateRoad);
+            _settingsContinueCreateField?.SetValueWithoutNotify(config.continueCreateRoad);
         }
 
         public void SaveShortcutSettings(EditorShortcutConfig config = null)
@@ -75,6 +82,10 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
             config.setDisplacementTypeForwardUp = ResolveKeyCode(_settingsDisplacementForwardUpField?.value);
             config.setDisplacementTypeForwardDown = ResolveKeyCode(_settingsDisplacementForwardDownField?.value);
 
+            config.truncateRoad = ResolveKeyCode(_settingsTruncateRoadField?.value);
+            config.truncateAndCreateRoad = ResolveKeyCode(_settingsTruncateAndCreateField?.value);
+            config.continueCreateRoad = ResolveKeyCode(_settingsContinueCreateField?.value);
+
             ShortcutSettingsSaved?.Invoke();
         }
 
@@ -100,6 +111,10 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
             _settingsDisplacementForwardUpField = Root.Q<EnumField>("settings-displacement-forward-up");
             _settingsDisplacementForwardDownField = Root.Q<EnumField>("settings-displacement-forward-down");
 
+            _settingsTruncateRoadField = Root.Q<EnumField>("settings-truncate-road");
+            _settingsTruncateAndCreateField = Root.Q<EnumField>("settings-truncate-and-create");
+            _settingsContinueCreateField = Root.Q<EnumField>("settings-continue-create");
+
             ConfigureKeyCodeField(_settingsPrevBlockField);
             ConfigureKeyCodeField(_settingsNextBlockField);
             ConfigureKeyCodeField(_settingsSprintField);
@@ -113,6 +128,9 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
             ConfigureKeyCodeField(_settingsDisplacementDownField);
             ConfigureKeyCodeField(_settingsDisplacementForwardUpField);
             ConfigureKeyCodeField(_settingsDisplacementForwardDownField);
+            ConfigureKeyCodeField(_settingsTruncateRoadField);
+            ConfigureKeyCodeField(_settingsTruncateAndCreateField);
+            ConfigureKeyCodeField(_settingsContinueCreateField);
 
             RegisterShortcutSaveCallback(_settingsPrevBlockField);
             RegisterShortcutSaveCallback(_settingsNextBlockField);
@@ -127,6 +145,9 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
             RegisterShortcutSaveCallback(_settingsDisplacementDownField);
             RegisterShortcutSaveCallback(_settingsDisplacementForwardUpField);
             RegisterShortcutSaveCallback(_settingsDisplacementForwardDownField);
+            RegisterShortcutSaveCallback(_settingsTruncateRoadField);
+            RegisterShortcutSaveCallback(_settingsTruncateAndCreateField);
+            RegisterShortcutSaveCallback(_settingsContinueCreateField);
         }
 
         private void RegisterShortcutSaveCallback(EnumField field)

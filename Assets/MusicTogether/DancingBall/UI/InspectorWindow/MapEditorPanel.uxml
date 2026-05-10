@@ -1,8 +1,16 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <ui:VisualElement name="map-root" class="db-panel">
         <ui:Foldout name="map-common-container" text="Map 通用选项" class="db-section" style="display: none;">
+            <ui:VisualElement name="map-info-section" class="db-detail-form">
+                <ui:Label text="Map 信息" class="db-subtitle" />
+                <ui:Label name="map-is-data-valid" text="数据状态：未加载" class="db-muted" />
+                <ui:Label name="map-scene-data-status" text="SceneData：未加载" class="db-muted" />
+                <ui:Label name="map-road-count" text="Road 数量：0" class="db-muted" />
+                <ui:Label name="map-movement-data-count" text="MovementData 数量：0" class="db-muted" />
+            </ui:VisualElement>
             <ui:Button name="map-rebuild-roads" text="重建Road列表，清理重复和无效Road，添加缺失Road" class="db-button" />
             <ui:Button name="map-refresh-all-roads" text="刷新所有Road，重建Block列表" class="db-button" />
+            <ui:Button name="map-generate-movement-data" text="生成所有Road的MovementData" class="db-button" />
             <ui:VisualElement name="map-road-list-section" class="db-row">
                 <ui:Label text="Road 列表" class="db-subtitle" />
                 <ui:VisualElement name="road-toolbar" class="db-toolbar">

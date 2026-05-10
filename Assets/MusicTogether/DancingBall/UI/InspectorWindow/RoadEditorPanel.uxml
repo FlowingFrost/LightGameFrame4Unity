@@ -1,20 +1,38 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <ui:VisualElement name="road-root" class="db-panel">
-        <ui:Foldout name="road-common-container" text="Road 通用选项" class="db-section" style="display: none;">
+        <ui:Foldout name="road-common-container" text="Road 通用选项" class="db-section" style="display: flex;">
             <ui:VisualElement name="road-detail-form" class="db-detail-form">
                 <ui:Label text="Road 详情" class="db-subtitle" />
                 <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
                     <ui:TextField name="road-target-data-name" label="目标Road数据名称" class="db-field" />
-                    <ui:Button name="road-modify-target-data-name" text="更改目标Road数据名称" class="db-button" />
+                    <ui:Button name="road-modify-target-data-name" text="更改名称" class="db-button" />
                 </ui:VisualElement>
                 <ui:DropdownField name="road-detail-segment" label="目标Segment" class="db-field" />
-                <ui:VisualElement class="db-row">
+                <ui:VisualElement class="db-row" style="flex-direction: row;">
                     <ui:Label text="Note 起止序号" class="db-field" />
                     <ui:IntegerField name="road-note-range-begin" class="db-field" />
                     <ui:IntegerField name="road-note-range-end" class="db-field" />
                 </ui:VisualElement>
                 <ui:Button name="road-modify-note-range" text="更改Note起止序号，重建Block列表" class="db-button" />
             </ui:VisualElement>
+            <ui:VisualElement name="road-info-section" class="db-detail-form">
+                <ui:Label text="Road 信息" class="db-subtitle" />
+                <ui:Label name="road-is-data-valid" text="数据状态：未加载" class="db-muted" />
+                <ui:Label name="road-map-name" text="所属 Map：未加载" class="db-muted" />
+            </ui:VisualElement>
+            <ui:VisualElement name="road-pregen-section" class="db-detail-form">
+                <ui:Label text="预生成数据" class="db-subtitle" />
+                <ui:Label name="road-begin-time" text="RoadBeginTime：-" class="db-muted" />
+                <ui:Label name="road-end-time" text="RoadEndTime：-" class="db-muted" />
+                <ui:Label name="road-single-block-duration" text="SingleBlockDuration：-" class="db-muted" />
+                <ui:Label name="road-movement-data-count" text="MovementData 数量：0" class="db-muted" />
+                <ui:Label name="road-animation-data-count" text="AnimationData 数量：0" class="db-muted" />
+                <ui:Button name="road-generate-movement-data" text="生成 Block MovementData" class="db-button" />
+            </ui:VisualElement>
+            <ui:Button name="road-save-transform" text="保存 Transform 到 RoadData" class="db-button" />
+            <ui:Button name="road-continue-create" text="从当前Road末尾继续创建新Road" class="db-button" />
+            <ui:Button name="road-truncate" text="截断当前Road（需选中 Block）" class="db-button" />
+            <ui:Button name="road-truncate-and-create" text="截断并创建新Road（需选中 Block）" class="db-button" />
             <ui:Button name="road-refresh-road-blocks" text="重建Block列表，清理重复和无效Block，添加缺失Block，更新Block位置" class="db-button" />
             <ui:Button name="road-update-block-transform" text="更新Block位置和显示信息" class="db-button" />
             <ui:Button name="road-refresh-block-display" text="更新Block显示信息" class="db-button" />
@@ -29,6 +47,16 @@
                 <ui:Label name="block-displacement-list-empty" text="暂无位移数据" class="db-muted" />
                 <ui:Label text="未定义的 Block 不会显示在此列表" class="db-muted" />
             </ui:VisualElement>
+            <ui:Foldout name="block-displacement-shift-section" text="位移数据批量偏移" class="db-section db-section-spaced" style="display: flex;">
+                <ui:VisualElement class="db-row">
+                    <ui:IntegerField name="block-displacement-shift-start" label="起始 Index" class="db-field" />
+                    <ui:IntegerField name="block-displacement-shift-end" label="结束 Index（可选）" class="db-field" />
+                </ui:VisualElement>
+                <ui:VisualElement class="db-row">
+                    <ui:Button name="block-displacement-shift-minus" text="-1 偏移" class="db-button" />
+                    <ui:Button name="block-displacement-shift-plus" text="+1 偏移" class="db-button" />
+                </ui:VisualElement>
+            </ui:Foldout>
         </ui:Foldout>
         <ui:Foldout name="road-derived-container" text="Road 继承类选项" class="db-section db-section-spaced" style="display: none;">
             <ui:Label text="（当前无继承类专属操作）" name="road-derived-empty" class="db-muted" />

@@ -26,6 +26,10 @@ namespace MusicTogether.DancingBall.EditorTool.Editor
                 return;
             }
 
+            var commonStyle = AssetDatabase.LoadAssetAtPath<StyleSheet>("Assets/MusicTogether/DancingBall/UI/DancingBallEditor_Common.uss");
+            if (commonStyle != null)
+                rootVisualElement.styleSheets.Add(commonStyle);
+
             visualTree.CloneTree(rootVisualElement);
 
             _windowManager = new SettingsWindowManager(rootVisualElement);

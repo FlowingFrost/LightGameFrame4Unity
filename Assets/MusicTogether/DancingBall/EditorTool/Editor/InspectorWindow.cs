@@ -15,6 +15,7 @@ namespace MusicTogether.DancingBall.EditorTool.Editor
         [SerializeField] private string _uxmlPath = "Assets/MusicTogether/DancingBall/UI/InspectorWindow.uxml";
 
         private IEditorViewController _controller;
+        private EditorCenter _editorCenter;
 
         [MenuItem("MusicTogether/DancingBall/Inspector")]
         public static void ShowWindow()
@@ -27,8 +28,8 @@ namespace MusicTogether.DancingBall.EditorTool.Editor
 
         private void CreateGUI()
         {
-            var editorCenter = EditorLocator.GetService<EditorCenter>();
-            if (editorCenter == null)
+            _editorCenter = EditorLocator.GetService<EditorCenter>();
+            if (_editorCenter == null)
             {
                 rootVisualElement.Add(new Label("EditorCenter not found."));
                 return;
@@ -43,20 +44,32 @@ namespace MusicTogether.DancingBall.EditorTool.Editor
             }
 
             visualTree.CloneTree(rootVisualElement);
-            _controller = new InspectorViewController(editorCenter);
+
+            rootVisualElement.RegisterCallback<KeyDownEvent>(OnKeyDown);
+
+            _controller = new InspectorViewController(_editorCenter);
             _controller.Bind(rootVisualElement);
 
             // Host 负责 Editor 特有的窗口创建（RoadCreateWindow）
             var ctrl = (InspectorViewController)_controller;
             ctrl.RoadCreateDialogRequested = () =>
             {
-                RoadCreateWindow.ShowWindow(editorCenter.selectedRoad,
+                RoadCreateWindow.ShowWindow(_editorCenter.selectedRoad,
                     (name, seg, begin, end) => ctrl.OnRoadCreated(name, seg, begin, end));
             };
         }
 
+        private void OnKeyDown(KeyDownEvent evt)
+        {
+            if (_editorCenter == null) return;
+            _editorCenter.ClaimInput(this);
+            if (_editorCenter.ProcessKey(evt.keyCode, this))
+                evt.StopPropagation();
+        }
+
         private void OnDisable()
         {
+            _editorCenter?.ReleaseInput(this);
             _controller?.Dispose();
             _controller = null;
         }

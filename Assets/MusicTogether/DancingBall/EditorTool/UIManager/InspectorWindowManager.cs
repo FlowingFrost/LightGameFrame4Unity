@@ -24,7 +24,13 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
         private VisualElement _mapDerivedContainer;
         private VisualElement _mapMissBindingContainer;
             private Button _mapMissBindingButton;
-            
+            private Button _mapGenerateMovementDataButton;
+            //map-info-section
+                private Label _mapIsDataValidLabel;
+                private Label _mapSceneDataStatusLabel;
+                private Label _mapRoadCountLabel;
+                private Label _mapMovementDataCountLabel;
+
         //Road
         private VisualElement _roadCommonContainer;
             //road-detail-form
@@ -34,6 +40,20 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
                     private IntegerField _roadNoteRangeBeginField;
                     private IntegerField _roadNoteRangeEndField;
                 private Button _roadModifyNoteRangeButton;
+            //road-info-section
+                private Label _roadIsDataValidLabel;
+                private Label _roadMapNameLabel;
+            //road-pregen-section
+                private Label _roadBeginTimeLabel;
+                private Label _roadEndTimeLabel;
+                private Label _roadSingleBlockDurationLabel;
+                private Label _roadMovementDataCountLabel;
+                private Label _roadAnimationDataCountLabel;
+            private Button _roadSaveTransformButton;
+            private Button _roadContinueCreateButton;
+            private Button _roadTruncateButton;
+            private Button _roadTruncateAndCreateButton;
+            private Button _roadGenerateMovementDataButton;
             private Button _roadRefreshRoadBlocksButton;
             private Button _roadUpdateBlockTransformButton;
             private Button _roadRefreshBlockDisplayButton;
@@ -66,8 +86,14 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
                 private Button _blockDisplacementShiftMinusButton;
                 private Button _blockDisplacementShiftPlusButton;
         private VisualElement _blockMissBindingContainer;
+        //Block info
+            private IntegerField _blockLocalIndexField;
+            private TextField _blockRoadNameField;
+            private Label _blockIsDataValidLabel;
+            private Label _blockTileHolderStatusLabel;
+            private Label _blockDebugStatusLabel;
+            private Label _blockDisplacementSummaryLabel;
 
-        
 
         private List<RoadData> _roadListCache = new List<RoadData>();
         private List<IBlockDisplacementData> _blockDisplacementListCache = new List<IBlockDisplacementData>();
@@ -92,6 +118,13 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
         public Action<int> RoadModifyTargetSegmentRequested { get; set; }
         public Action<int, int> RoadModifyNoteRangeRequested { get; set; }
         public Action<string> RoadModifyTargetDataNameRequested { get; set; }
+        public Action RoadSaveTransformRequested { get; set; }
+        public Action RoadContinueCreateRequested { get; set; }
+        public Action RoadTruncateRequested { get; set; }
+        public Action RoadTruncateAndCreateRequested { get; set; }
+        public Action RoadGenerateMovementDataRequested { get; set; }
+
+        public Action MapGenerateMovementDataRequested { get; set; }
 
         public Action<Enum> BlockDisplacementDataTypeChanged { get; set; }
         public Action<Enum> ClassicBlockApplyTurnTypeRequested { get; set; }
@@ -118,11 +151,81 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
             if (_mapMissBindingContainer != null) _mapMissBindingContainer.style.display = missBindingVisible ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
+        // ---- Map Info ----
+
+        public void SetMapIsDataValid(bool isValid)
+        {
+            if (_mapIsDataValidLabel != null)
+                _mapIsDataValidLabel.text = isValid ? "数据状态：✓ 有效" : "数据状态：✗ 无效";
+        }
+
+        public void SetMapSceneDataStatus(bool loaded)
+        {
+            if (_mapSceneDataStatusLabel != null)
+                _mapSceneDataStatusLabel.text = loaded ? "SceneData：✓ 已加载" : "SceneData：✗ 缺失";
+        }
+
+        public void SetMapRoadCount(int count)
+        {
+            if (_mapRoadCountLabel != null)
+                _mapRoadCountLabel.text = $"Road 数量：{count}";
+        }
+
+        public void SetMapMovementDataCount(int count)
+        {
+            if (_mapMovementDataCountLabel != null)
+                _mapMovementDataCountLabel.text = $"MovementData 数量：{count}";
+        }
+
         public void SetRoadContainersVisibility(bool commonVisible, bool derivedVisible, bool missBindingVisible)
         {
             if (_roadCommonContainer != null) _roadCommonContainer.style.display = commonVisible ? DisplayStyle.Flex : DisplayStyle.None;
             if (_roadDerivedContainer != null) _roadDerivedContainer.style.display = derivedVisible ? DisplayStyle.Flex : DisplayStyle.None;
             if (_roadMissBindingContainer != null) _roadMissBindingContainer.style.display = missBindingVisible ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
+        // ---- Road Info ----
+
+        public void SetRoadIsDataValid(bool isValid)
+        {
+            if (_roadIsDataValidLabel != null)
+                _roadIsDataValidLabel.text = isValid ? "数据状态：✓ 有效" : "数据状态：✗ 无效";
+        }
+
+        public void SetRoadMapName(string mapName)
+        {
+            if (_roadMapNameLabel != null)
+                _roadMapNameLabel.text = $"所属 Map：{mapName ?? "未知"}";
+        }
+
+        public void SetRoadPregenData(double beginTime, double endTime, double singleBlockDuration, int movementDataCount, int animationDataCount)
+        {
+            if (_roadBeginTimeLabel != null)
+                _roadBeginTimeLabel.text = $"RoadBeginTime：{beginTime:F3}";
+            if (_roadEndTimeLabel != null)
+                _roadEndTimeLabel.text = $"RoadEndTime：{endTime:F3}";
+            if (_roadSingleBlockDurationLabel != null)
+                _roadSingleBlockDurationLabel.text = $"SingleBlockDuration：{singleBlockDuration:F3}";
+            if (_roadMovementDataCountLabel != null)
+                _roadMovementDataCountLabel.text = $"MovementData 数量：{movementDataCount}";
+            if (_roadAnimationDataCountLabel != null)
+                _roadAnimationDataCountLabel.text = $"AnimationData 数量：{animationDataCount}";
+        }
+
+        public void SetRoadTruncateButtonsEnabled(bool enabled)
+        {
+            _roadTruncateButton?.SetEnabled(enabled);
+            _roadTruncateAndCreateButton?.SetEnabled(enabled);
+        }
+
+        public void SetRoadTruncateButtonText(int blockLocalIndex, int noteBeginIndex)
+        {
+            int noteID = noteBeginIndex + blockLocalIndex;
+            string info = $"（Block {blockLocalIndex}, noteID={noteID}）";
+            if (_roadTruncateButton != null)
+                _roadTruncateButton.text = $"截断当前Road {info}";
+            if (_roadTruncateAndCreateButton != null)
+                _roadTruncateAndCreateButton.text = $"截断并创建新Road {info}";
         }
 
         public void SetBlockContainersVisibility(bool commonVisible, bool derivedVisible, bool missBindingVisible)
@@ -153,6 +256,50 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
             if (_blockDisplacementShiftSection != null)
             {
                 _blockDisplacementShiftSection.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
+            }
+        }
+
+        // ---- Block Info ----
+
+        public void SetBlockLocalIndex(int index)
+        {
+            _blockLocalIndexField?.SetValueWithoutNotify(index);
+        }
+
+        public void SetBlockRoadName(string roadName)
+        {
+            _blockRoadNameField?.SetValueWithoutNotify(roadName ?? "");
+        }
+
+        public void SetBlockIsDataValid(bool isValid)
+        {
+            if (_blockIsDataValidLabel != null)
+            {
+                _blockIsDataValidLabel.text = isValid ? "数据状态：✓ 有效" : "数据状态：✗ 无效";
+            }
+        }
+
+        public void SetBlockTileHolderStatus(bool found)
+        {
+            if (_blockTileHolderStatusLabel != null)
+            {
+                _blockTileHolderStatusLabel.text = found ? "TileHolder：✓ 已绑定" : "TileHolder：✗ 未找到";
+            }
+        }
+
+        public void SetBlockDebugStatus(bool found)
+        {
+            if (_blockDebugStatusLabel != null)
+            {
+                _blockDebugStatusLabel.text = found ? "BlockDebug：✓ 已绑定" : "BlockDebug：✗ 未找到";
+            }
+        }
+
+        public void SetBlockDisplacementSummary(string summary)
+        {
+            if (_blockDisplacementSummaryLabel != null)
+            {
+                _blockDisplacementSummaryLabel.text = summary ?? "无位移数据";
             }
         }
 
@@ -341,20 +488,43 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
             _mapCommonContainer = Root.Q<VisualElement>("map-common-container");
             _mapDerivedContainer = Root.Q<VisualElement>("map-derived-container");
             _mapMissBindingContainer = Root.Q<VisualElement>("map-missbinding-container");
+            _mapIsDataValidLabel = Root.Q<Label>("map-is-data-valid");
+            _mapSceneDataStatusLabel = Root.Q<Label>("map-scene-data-status");
+            _mapRoadCountLabel = Root.Q<Label>("map-road-count");
+            _mapMovementDataCountLabel = Root.Q<Label>("map-movement-data-count");
 
             _roadCommonContainer = Root.Q<VisualElement>("road-common-container");
             _roadDerivedContainer = Root.Q<VisualElement>("road-derived-container");
             _roadMissBindingContainer = Root.Q<VisualElement>("road-missbinding-container");
+            _roadIsDataValidLabel = Root.Q<Label>("road-is-data-valid");
+            _roadMapNameLabel = Root.Q<Label>("road-map-name");
+            _roadBeginTimeLabel = Root.Q<Label>("road-begin-time");
+            _roadEndTimeLabel = Root.Q<Label>("road-end-time");
+            _roadSingleBlockDurationLabel = Root.Q<Label>("road-single-block-duration");
+            _roadMovementDataCountLabel = Root.Q<Label>("road-movement-data-count");
+            _roadAnimationDataCountLabel = Root.Q<Label>("road-animation-data-count");
+            _roadSaveTransformButton = Root.Q<Button>("road-save-transform");
+            _roadContinueCreateButton = Root.Q<Button>("road-continue-create");
+            _roadTruncateButton = Root.Q<Button>("road-truncate");
+            _roadTruncateAndCreateButton = Root.Q<Button>("road-truncate-and-create");
+            _roadGenerateMovementDataButton = Root.Q<Button>("road-generate-movement-data");
 
             _blockCommonContainer = Root.Q<VisualElement>("block-common-container");
             _blockDerivedContainer = Root.Q<VisualElement>("block-derived-container");
             _blockMissBindingContainer = Root.Q<VisualElement>("block-missbinding-container");
+            _blockLocalIndexField = Root.Q<IntegerField>("block-local-index");
+            _blockRoadNameField = Root.Q<TextField>("block-road-name");
+            _blockIsDataValidLabel = Root.Q<Label>("block-is-data-valid");
+            _blockTileHolderStatusLabel = Root.Q<Label>("block-tile-holder-status");
+            _blockDebugStatusLabel = Root.Q<Label>("block-debug-status");
+            _blockDisplacementSummaryLabel = Root.Q<Label>("block-displacement-summary");
 
             _bindedView = Root.Q<VisualElement>("binded-view");
             _unbindedView = Root.Q<VisualElement>("unbinded-view");
             _retryButton = Root.Q<Button>("editor-retry");
 
             _mapMissBindingButton = Root.Q<Button>("map-missbinding-retry");
+            _mapGenerateMovementDataButton = Root.Q<Button>("map-generate-movement-data");
             _mapRebuildRoadsButton = Root.Q<Button>("map-rebuild-roads");
             _mapRefreshAllRoadsButton = Root.Q<Button>("map-refresh-all-roads");
 
@@ -411,6 +581,11 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
                 _mapRefreshAllRoadsButton.clicked += () => MapRefreshAllRoadsRequested?.Invoke();
             }
 
+            if (_mapGenerateMovementDataButton != null)
+            {
+                _mapGenerateMovementDataButton.clicked += () => MapGenerateMovementDataRequested?.Invoke();
+            }
+
             if (_roadCreateButton != null)
             {
                 _roadCreateButton.clicked += () => RoadCreateRequested?.Invoke();
@@ -429,6 +604,31 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
             if (_roadRefreshButton != null)
             {
                 _roadRefreshButton.clicked += () => RoadRefreshRequested?.Invoke();
+            }
+
+            if (_roadSaveTransformButton != null)
+            {
+                _roadSaveTransformButton.clicked += () => RoadSaveTransformRequested?.Invoke();
+            }
+
+            if (_roadContinueCreateButton != null)
+            {
+                _roadContinueCreateButton.clicked += () => RoadContinueCreateRequested?.Invoke();
+            }
+
+            if (_roadTruncateButton != null)
+            {
+                _roadTruncateButton.clicked += () => RoadTruncateRequested?.Invoke();
+            }
+
+            if (_roadTruncateAndCreateButton != null)
+            {
+                _roadTruncateAndCreateButton.clicked += () => RoadTruncateAndCreateRequested?.Invoke();
+            }
+
+            if (_roadGenerateMovementDataButton != null)
+            {
+                _roadGenerateMovementDataButton.clicked += () => RoadGenerateMovementDataRequested?.Invoke();
             }
 
             if (_roadRefreshRoadBlocksButton != null)

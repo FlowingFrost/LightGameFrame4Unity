@@ -70,6 +70,10 @@ namespace MusicTogether.DancingBall.Scene
                     throw new InvalidOperationException("[ClassicMap.RecoverRoads] SceneData 为空，无法恢复 Road。");
                 }
                 var roadDataList = sceneData.roadDataList;
+
+                // 清理已销毁的 Road（DestroyImmediate 后接口引用无法被 == null 检测）
+                roads.RemoveAll(r => r is UnityEngine.Object obj && obj == null);
+
                 // 去重：保留 blocks 最多的
                 var duplicateRoads = roads
                     .GroupBy(r => r.RoadData?.roadName)
@@ -78,8 +82,8 @@ namespace MusicTogether.DancingBall.Scene
                     .ToList();
                 RemoveRoads(duplicateRoads);
 
-                // 移除无效 road（找不到对应的RoadData，或RoadData与现在的数据脱节）
-                var roadToRemove = roads.Where(r => r.RoadData == null || SceneData.roadDataList.Contains(r.RoadData)).ToList();
+                // 移除无效 road（RoadData 为空，或 RoadData 已不在 SceneData 中）
+                var roadToRemove = roads.Where(r => r.RoadData == null || !SceneData.roadDataList.Contains(r.RoadData)).ToList();
                 RemoveRoads(roadToRemove);
                 
                 //移除不在roads列表中的road（丢失绑定的子物体）

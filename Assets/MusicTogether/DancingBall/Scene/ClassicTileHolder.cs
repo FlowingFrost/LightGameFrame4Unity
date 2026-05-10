@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using MusicTogether.DancingBall.Player;
 using UnityEngine;
 
@@ -25,7 +26,7 @@ namespace MusicTogether.DancingBall.Scene
         {
             List<MovementData> datum = new List<MovementData>();
             if (backwardTile != null && backwardTile.gameObject.activeSelf) datum.Add(new MovementData(false, currentBlockTime, backwardTile, tileThickness));
-            datum.Add(new MovementData(blockNeedTap, currentBlockTime, bottomTile, tileThickness));//Bottom Tile必须存在且始终启用。
+            datum.Add(new MovementData(false, currentBlockTime, bottomTile, tileThickness));//Bottom Tile必须存在且始终启用。
             if (forwardTile != null && forwardTile.gameObject.activeSelf) datum.Add(new MovementData(false, currentBlockTime, forwardTile, tileThickness));
 
             const float segmentWidthRate = 0.2f;
@@ -34,6 +35,7 @@ namespace MusicTogether.DancingBall.Scene
                 datum[i].Time = currentBlockTime - singleBlockDuration * segmentWidthRate / 2 +
                                 singleBlockDuration * segmentWidthRate / (datum.Count + 1) * (i + 1);
             }
+            datum.First().NeedTap = blockNeedTap;
             return datum;
         }
     }

@@ -1,7 +1,20 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <ui:VisualElement name="block-root" class="db-panel">
         <ui:Foldout name="block-common-container" text="Block 通用选项" class="db-section" style="display: flex;">
-            <ui:Label text="（Block 物体由 Road Note 范围自动生成）" class="db-muted" />
+            <ui:VisualElement name="block-detail-form" class="db-detail-form">
+                <ui:Label text="Block 详情" class="db-subtitle" />
+                <ui:VisualElement class="db-row" style="flex-direction: row;">
+                    <ui:IntegerField name="block-local-index" label="Local Index" readonly="true" class="db-field" />
+                    <ui:TextField name="block-road-name" label="所属 Road" readonly="true" class="db-field" />
+                </ui:VisualElement>
+                <ui:Label name="block-is-data-valid" text="数据状态：未加载" class="db-muted" />
+                <ui:Label name="block-tile-holder-status" text="TileHolder：未检测" class="db-muted" />
+                <ui:Label name="block-debug-status" text="BlockDebug：未检测" class="db-muted" />
+            </ui:VisualElement>
+            <ui:VisualElement name="block-data-summary-container" class="db-detail-form">
+                <ui:Label text="位移数据摘要" class="db-subtitle" />
+                <ui:Label name="block-displacement-summary" text="无位移数据" class="db-muted" />
+            </ui:VisualElement>
         </ui:Foldout>
         <ui:Foldout name="block-derived-container" text="Block 继承类选项" class="db-section db-section-spaced" style="display: none;">
             <ui:VisualElement name="block-displacement-create-section" class="db-detail-form" style="display: none;">
@@ -13,16 +26,6 @@
                 <ui:Label text="位移数据详情" class="db-subtitle" />
                 <ui:VisualElement name="block-displacement-container" />
                 <ui:Button name="block-displacement-delete-current" text="删除当前位移数据" class="db-button" />
-            </ui:VisualElement>
-        </ui:Foldout>
-        <ui:Foldout name="block-displacement-shift-section" text="位移数据批量偏移" class="db-section db-section-spaced" style="display: flex;">
-            <ui:VisualElement class="db-row">
-                <ui:IntegerField name="block-displacement-shift-start" label="起始 Index" class="db-field" />
-                <ui:IntegerField name="block-displacement-shift-end" label="结束 Index（可选）" class="db-field" />
-            </ui:VisualElement>
-            <ui:VisualElement class="db-row">
-                <ui:Button name="block-displacement-shift-minus" text="-1 偏移" class="db-button" />
-                <ui:Button name="block-displacement-shift-plus" text="+1 偏移" class="db-button" />
             </ui:VisualElement>
         </ui:Foldout>
         <ui:VisualElement name="block-missbinding-container" class="db-section">

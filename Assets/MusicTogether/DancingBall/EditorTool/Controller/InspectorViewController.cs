@@ -82,6 +82,7 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
             _windowManager.RoadModifyTargetSegmentRequested = RoadModifyTargetSegmentRequested;
             _windowManager.RoadModifyNoteRangeRequested = RoadModifyNoteRangeRequested;
             _windowManager.RoadModifyTargetDataNameRequested = RoadModifyTargetDataNameRequested;
+            _windowManager.RoadSaveTransformRequested = RoadSaveTransformRequested;
             _windowManager.RoadListSelectionChanged = RoadListSelectionChanged;
             _windowManager.BlockDisplacementSelectionChanged = BlockDisplacementSelectionChanged;
             _windowManager.RoadRefreshRequested = RoadRefreshRequested;
@@ -92,6 +93,11 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
             _windowManager.RoadDuplicateRequested = RoadDuplicateRequested;
             _windowManager.BlockDisplacementCreateRequested = BlockDisplacementCreateRequested;
             _windowManager.BlockDisplacementDeleteRequested = BlockDisplacementDeleteRequested;
+            _windowManager.RoadTruncateRequested = RoadTruncateRequested;
+            _windowManager.RoadTruncateAndCreateRequested = RoadTruncateAndCreateRequested;
+            _windowManager.RoadContinueCreateRequested = RoadContinueCreateRequested;
+            _windowManager.RoadGenerateMovementDataRequested = RoadGenerateMovementDataRequested;
+            _windowManager.MapGenerateMovementDataRequested = MapGenerateMovementDataRequested;
 
             _windowManager.RetryBind = RetryBind;
             _windowManager.MapMissBindingRetryRequested = RetryBind;
@@ -101,6 +107,7 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
             {
                 _windowManager.SetMapContainersVisibility(true, false, false);
                 _windowManager.BindRoadList(_editorCenter.targetMap.SceneData.roadDataList, _editorCenter.SelectedRoadIndex);
+                RefreshMapInfo();
             }
             OnRoadSelected(_editorCenter.selectedRoad);
             OnBlockSelected(_editorCenter.selectedBlock, _editorCenter.selectedDisplacementData);
@@ -138,6 +145,126 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
             return true;
         }
 
+        // ---- 信息刷新 ----
+
+        private void RefreshMapInfo()
+        {
+            var map = _editorCenter?.targetMap;
+            _windowManager.SetMapIsDataValid(map != null && map.SceneData != null);
+            _windowManager.SetMapSceneDataStatus(map?.SceneData != null);
+            _windowManager.SetMapRoadCount(map?.Roads?.Count ?? 0);
+            int movementCount = 0;
+            if (map?.Roads != null)
+            {
+                foreach (var road in map.Roads)
+                {
+                    movementCount += road?.MovementDatum?.Count ?? 0;
+                }
+            }
+            _windowManager.SetMapMovementDataCount(movementCount);
+        }
+
+        private void RefreshRoadInfo(IRoad road)
+        {
+            if (road == null) return;
+            _windowManager.SetRoadIsDataValid(road.IsDataValid);
+            _windowManager.SetRoadMapName(GetSafeMapName(road.Map));
+            _windowManager.SetRoadPregenData(
+                road.RoadBeginTime,
+                road.RoadEndTime,
+                0,
+                road.MovementDatum?.Count ?? 0,
+                road.AnimationEventDatum?.Count ?? 0);
+        }
+
+        private void RoadSaveTransformRequested()
+        {
+            if (!VerifyRoad()) return;
+            _editorCenter.selectedRoad.SaveTransformData();
+            _editorCenter.SendMessage("Transform 已保存到 RoadData。");
+        }
+
+        private void RoadContinueCreateRequested()
+        {
+            if (!VerifyRoad()) return;
+            if (_editorCenter.ContinueCreateRoad())
+            {
+                _windowManager.BindRoadList(_editorCenter.targetMap.SceneData.roadDataList, _editorCenter.SelectedRoadIndex);
+                _editorCenter.SendMessage("已从当前 Road 末尾创建新 Road。");
+            }
+            else
+            {
+                _editorCenter.SendMessage("继续创建失败，请检查 Road 数据。");
+            }
+        }
+
+        private void RoadTruncateRequested()
+        {
+            if (!VerifyBlock()) return;
+            if (_editorCenter.TruncateRoadAtSelectedBlock())
+            {
+                _windowManager.BindBlockDisplacementList(
+                    _editorCenter.selectedRoad.RoadData.blockDisplacementDataList,
+                    _editorCenter.SelectedBlockIndex);
+                _windowManager.BindRoadList(_editorCenter.targetMap.SceneData.roadDataList, _editorCenter.SelectedRoadIndex);
+                RefreshRoadInfo(_editorCenter.selectedRoad);
+                _editorCenter.SendMessage("Road 已截断。");
+            }
+            else
+            {
+                _editorCenter.SendMessage("截断失败，选中的 Block 可能已在 Road 末尾。");
+            }
+        }
+
+        private void RoadTruncateAndCreateRequested()
+        {
+            if (!VerifyBlock()) return;
+            if (_editorCenter.TruncateAndCreateRoad())
+            {
+                _windowManager.BindBlockDisplacementList(
+                    _editorCenter.selectedRoad.RoadData.blockDisplacementDataList,
+                    _editorCenter.SelectedBlockIndex);
+                _windowManager.BindRoadList(_editorCenter.targetMap.SceneData.roadDataList, _editorCenter.SelectedRoadIndex);
+                RefreshRoadInfo(_editorCenter.selectedRoad);
+                RefreshMapInfo();
+                _editorCenter.SendMessage("已截断 Road 并创建新 Road 承接剩余部分。");
+            }
+            else
+            {
+                _editorCenter.SendMessage("截断并创建失败，选中的 Block 可能已在 Road 末尾。");
+            }
+        }
+
+        private void RoadGenerateMovementDataRequested()
+        {
+            if (!VerifyRoad()) return;
+            try
+            {
+                _editorCenter.selectedRoad.GenerateBlockMovementData();
+                RefreshRoadInfo(_editorCenter.selectedRoad);
+                _editorCenter.SendMessage("Block MovementData 已生成。");
+            }
+            catch (Exception ex)
+            {
+                _editorCenter.SendMessage($"生成 MovementData 失败：{ex.Message}");
+            }
+        }
+
+        private void MapGenerateMovementDataRequested()
+        {
+            if (!VerifyMap()) return;
+            try
+            {
+                _editorCenter.targetMap.GenerateMovementData();
+                RefreshMapInfo();
+                _editorCenter.SendMessage("所有 Road 的 MovementData 已生成。");
+            }
+            catch (Exception ex)
+            {
+                _editorCenter.SendMessage($"生成 MovementData 失败：{ex.Message}");
+            }
+        }
+
         // ---- 事件响应 ----
 
         private void OnRoadSelected(IRoad road)
@@ -153,28 +280,55 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
             _windowManager.BindRoadList(_editorCenter.targetMap.SceneData.roadDataList, _editorCenter.SelectedRoadIndex);
             _windowManager.BindBlockDisplacementList(road.RoadData.blockDisplacementDataList, _editorCenter.SelectedBlockIndex);
             _windowManager.SetBlockDisplacementShiftVisible(true);
+            _windowManager.SetRoadTruncateButtonsEnabled(false);
+            RefreshRoadInfo(road);
+            RefreshMapInfo();
         }
 
         private void OnBlockSelected(IBlock block, IBlockDisplacementData displacementData)
         {
             if (!VerifyBlock()) return;
-            _windowManager.SetBlockContainersVisibility(false, true, false);
+            _windowManager.SetBlockContainersVisibility(true, true, false);
             _windowManager.BindBlockDisplacementList(
                 _editorCenter.selectedRoad.RoadData.blockDisplacementDataList,
                 block.BlockLocalIndex);
+
+            // 更新 Block 通用信息
+            _windowManager.SetBlockLocalIndex(block.BlockLocalIndex);
+            _windowManager.SetBlockRoadName(_editorCenter.selectedRoad?.RoadData?.roadName ?? "未知");
+            _windowManager.SetBlockIsDataValid(block.IsDataValid);
+            _windowManager.SetBlockTileHolderStatus(block.TileHolder != null);
+            _windowManager.SetBlockDebugStatus(block.BlockDebugDisplay != null);
+
+            // 更新截断按钮状态与文本
+            _windowManager.SetRoadTruncateButtonsEnabled(true);
+            _windowManager.SetRoadTruncateButtonText(block.BlockLocalIndex,
+                _editorCenter.selectedRoad?.RoadData?.noteBeginIndex ?? 0);
 
             if (displacementData == null)
             {
                 _windowManager.SetBlockDisplacementCreateVisible(true);
                 _windowManager.SetBlockDisplacementDetailVisible(false);
+                _windowManager.SetBlockDisplacementSummary("无位移数据");
                 ClearDisplacementUI();
             }
             else
             {
                 _windowManager.SetBlockDisplacementCreateVisible(false);
                 _windowManager.SetBlockDisplacementDetailVisible(true);
+                _windowManager.SetBlockDisplacementSummary(FormatDisplacementSummary(displacementData));
                 ShowDisplacementUI(displacementData);
             }
+        }
+
+        private static string FormatDisplacementSummary(IBlockDisplacementData data)
+        {
+            if (data == null) return "无位移数据";
+            if (data is ClassicBlockDisplacementData classic)
+            {
+                return $"Turn: {classic.turnType} | Displacement: {classic.displacementType}";
+            }
+            return $"{data.GetType().Name} (Index: {data.BlockIndex_Local})";
         }
 
         private void ClearDisplacementUI()
@@ -404,6 +558,14 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
                 result.Add(segment.Index);
             }
             return result;
+        }
+
+        private static string GetSafeMapName(IMap map)
+        {
+            if (map == null) return "运行时对象";
+            if (map is UnityEngine.Object unityObj && unityObj == null) return "(已销毁)";
+            if (map is UnityEngine.Object namedObj) return namedObj.name;
+            return map.GetType().Name;
         }
     }
 }

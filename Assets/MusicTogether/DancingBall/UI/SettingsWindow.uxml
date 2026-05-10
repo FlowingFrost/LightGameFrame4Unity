@@ -7,6 +7,12 @@
             <ui:EnumField name="settings-next-block" label="下一块" class="db-field" />
             <ui:EnumField name="settings-sprint" label="快速跳转" class="db-field" />
         </ui:VisualElement>
+        <ui:VisualElement name="settings-road-ops-container" class="db-section db-section-spaced">
+            <ui:Label text="Road 操作" name="settings-road-ops-header" class="db-subtitle db-accent" />
+            <ui:EnumField name="settings-truncate-road" label="截断 Road" class="db-field" />
+            <ui:EnumField name="settings-truncate-and-create" label="截断并创建 Road" class="db-field" />
+            <ui:EnumField name="settings-continue-create" label="继续创建 Road" class="db-field" />
+        </ui:VisualElement>
         <ui:VisualElement name="settings-edit-container" class="db-section db-section-spaced">
             <ui:Label text="编辑快捷键" name="settings-edit-header" class="db-title" />
             <ui:Label text="TurnType" name="settings-turn-header" class="db-subtitle db-accent" />

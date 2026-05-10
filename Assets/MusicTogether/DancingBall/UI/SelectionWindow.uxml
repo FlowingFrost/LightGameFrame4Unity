@@ -6,9 +6,9 @@
                 <ui:VisualElement name="selection-left" style="flex-grow: 1; margin-right: 8px;">
                     <ui:Label name="selection-title" text="DancingBall 选择信息" class="db-title" />
                     <ui:Toggle name="selection-enable" text="启用" class="db-field" style="flex-shrink: 1; flex-grow: 0;" />
-                    <ui:Label name="selection-info" class="db-muted" />
+                    <ui:Label name="selection-info" class="db-muted" style="display: none;" />
                     <ui:Label name="selection-hint" class="db-muted" />
-                    <ui:Label name="selection-jump-header" text="跳转到 (Road | Block)" class="db-subtitle db-accent" />
+                    <ui:Label name="selection-jump-header" text="跳转到 (Road | Block)" class="db-subtitle db-accent" style="display: none;" />
                     <ui:VisualElement name="selection-jump-row" class="db-row">
                         <ui:VisualElement style="flex-grow: 1; flex-direction: row; justify-content: space-between;">
                             <ui:IntegerField name="selection-jump-road" label="Road" class="db-field" />
