@@ -3,7 +3,7 @@ using UnityEngine.UIElements;
 using System;
 using System.Collections.Generic;
 
-namespace MusicTogether.MusicSampling.Editor
+namespace MusicTogether.MusicSampling
 {
     /// <summary>
     /// 波形可视化 VisualElement。

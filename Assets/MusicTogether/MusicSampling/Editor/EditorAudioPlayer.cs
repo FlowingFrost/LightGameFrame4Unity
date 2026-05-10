@@ -276,7 +276,7 @@ namespace MusicTogether.MusicSampling.Editor
         public void Dispose()
         {
             Stop();
-            
+
             EditorApplication.update -= Update;
 
             if (_audioObject != null)
