@@ -12,9 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4e73d6bd77f2430439d73334c32d9274, type: 3}
   m_Name: EditorShortcutConfig
   m_EditorClassIdentifier: 
+  configVersion: 0
+  configUpdatedAt: 
   previousBlock: 276
   nextBlock: 275
   sprint: 306
+  truncateRoad: 45
+  truncateAndCreateRoad: 271
+  continueCreateRoad: 43
   setTurnTypeNone: 115
   setTurnTypeForward: 119
   setTurnTypeRight: 100
