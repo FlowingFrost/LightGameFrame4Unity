@@ -510,7 +510,7 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
         private void RoadModifyTargetSegmentRequested(int segmentIndex)
         {
             if (!VerifyRoad()) return;
-            _editorCenter.selectedRoad.ModifyTargetSegmentIndex(segmentIndex);
+            _editorCenter.selectedRoad.ModifyTargetSegmentName(segmentIndex);
         }
 
         private void RoadModifyNoteRangeRequested(int begin, int end)

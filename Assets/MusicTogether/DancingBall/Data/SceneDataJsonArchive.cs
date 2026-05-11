@@ -62,7 +62,7 @@ namespace MusicTogether.DancingBall.Data
     public class RoadArchive
     {
         public string roadName;
-        public int targetSegmentIndex;
+        public string targetSegmentName;
         public int noteBeginIndex;
         public int noteEndIndex;
         public SerializableVector3 localPosition;
@@ -76,7 +76,7 @@ namespace MusicTogether.DancingBall.Data
             return new RoadArchive
             {
                 roadName = roadData.roadName,
-                targetSegmentIndex = roadData.targetSegmentIndex,
+                targetSegmentName = roadData.targetSegmentName,
                 noteBeginIndex = roadData.noteBeginIndex,
                 noteEndIndex = roadData.noteEndIndex,
                 localPosition = SerializableVector3.FromVector3(roadData.loaclPosition),
@@ -88,15 +88,15 @@ namespace MusicTogether.DancingBall.Data
 
         public RoadData ToRoadData()
         {
-            var roadData = new RoadData(0, targetSegmentIndex, noteBeginIndex, noteEndIndex)
+            var roadData = new RoadData(targetSegmentName, noteBeginIndex, noteEndIndex)
             {
                 roadName = roadName,
                 loaclPosition = localPosition.ToVector3(),
                 loaclRotation = localRotation.ToQuaternion(),
-                localScale = localScale.ToVector3()
+                localScale = localScale.ToVector3(),
+                blockDisplacementDataList = BlockDisplacementArchive.ToBlockList(blocks)
             };
 
-            roadData.blockDisplacementDataList = BlockDisplacementArchive.ToBlockList(blocks);
             return roadData;
         }
     }

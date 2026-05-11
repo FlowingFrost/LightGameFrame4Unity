@@ -258,10 +258,10 @@ namespace MusicTogether.DancingBall.Scene
                 RecoverBlocks();//Map.EditManager?.OnRoadBlockCountChanged(EditorTool.EditorActionContext.ForRoad(Map, GetRoadIndex()));
             }
             [Button("更改目标Segment")]
-            public void ModifyTargetSegmentIndex(int newSegmentIndex)
+            public void ModifyTargetSegmentName(string targetSegmentName)
             {
                 if (!IsDataValid) return;
-                RoadData.targetSegmentIndex = newSegmentIndex;
+                RoadData.targetSegmentName = targetSegmentName;
                 RecoverBlocks();//Map.EditManager?.OnRoadBlockCountChanged(EditorTool.EditorActionContext.ForRoad(Map, GetRoadIndex()));
             }
             [Button("更改目标Road数据名称")]
@@ -305,13 +305,19 @@ namespace MusicTogether.DancingBall.Scene
             [Button("生成Block MovementData（测试）")]
             public void GenerateBlockMovementData()
             {
-                if (!Map.SceneData.GetSegment(RoadData.targetSegmentIndex, out var targetSegment)) throw new Exception("找不到目标Segment，无法生成Block MovementData");
+                if (!Map.SceneData.GetSegment(RoadData.targetSegmentName, out var targetSegment)) throw new Exception("找不到目标Segment，无法生成Block MovementData");
                 movementDatum.Clear();
                 singleBlockDuration = targetSegment.GetNoteTimeAt(1);
                 foreach (var block in blocks)
                 {
                     double blockTime = targetSegment.GetNoteTimeAt(RoadData.noteBeginIndex + block.BlockLocalIndex);
-                    bool blockNeedTap = targetSegment.notes.Contains(RoadData.noteBeginIndex + block.BlockLocalIndex);
+
+#region MyRegion
+
+                    bool blockNeedTap = targetSegment.markedNoteIndices.Contains(RoadData.noteBeginIndex + block.BlockLocalIndex);
+                    // 注意，markedNoteIndices未经实际功能验证，不确定是否存在问题。
+#endregion
+                    
                     movementDatum.AddRange(block.TileHolder.GetTileMovementDatum(blockTime, singleBlockDuration, blockNeedTap));
                 }
                 bool movementDatumHasData = movementDatum.Count > 0;
@@ -340,7 +346,13 @@ namespace MusicTogether.DancingBall.Scene
         {
             if (!IsDataValid) return EditorConfig.problemBlockColor;
             bool hasRule = roadData.blockDisplacementDataList.Exists(b => b.BlockIndex_Local == blockLocalIndex);
-            bool hasTap = Map.SceneData.GetSegment(roadData.targetSegmentIndex, out var segemnt) ? segemnt.notes.Contains(roadData.noteBeginIndex + blockLocalIndex) : false;
+
+#region MyRegion
+
+            bool hasTap = Map.SceneData.GetSegment(roadData.targetSegmentName, out var segemnt) ? segemnt.markedNoteIndices.Contains(roadData.noteBeginIndex + blockLocalIndex) : false;
+            //应提取方法。
+
+#endregion
             if (hasTap)
                 return hasRule
                     ? EditorConfig.tapBlockWithDisplacementColor

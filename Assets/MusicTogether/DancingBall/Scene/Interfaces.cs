@@ -86,7 +86,7 @@ namespace MusicTogether.DancingBall.Scene
             public void ModifyNoteBeginIndex(int newBeginIndex);
             public void ModifyNoteEndIndex(int newEndIndex);
             public void ModifyNoteRange(int newBeginIndex, int newEndIndex);
-            public void ModifyTargetSegmentIndex(int newSegmentIndex);
+            public void ModifyTargetSegmentName(string targetSegmentName);
             public void ModifyTargetRoadDataName(string newName);
             public void SaveTransformData();
             

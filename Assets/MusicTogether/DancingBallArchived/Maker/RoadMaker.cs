@@ -22,9 +22,9 @@ namespace MusicTogether.DancingBallArchived.Maker
         [Title("Data")]
         [OnValueChanged("UpdateBlockManagement")]
         [SerializeField]private int musicPartIndex;
-        private Segemnt Segemnt => mapHolder.inputNoteData.noteLists[musicPartIndex];
-        private int BPM=>Segemnt.bpm;
-        private NoteType NoteType=>Segemnt.noteType;
+        //private Segemnt Segemnt => mapHolder.inputNoteData.noteLists[musicPartIndex];
+        //private int BPM=>Segemnt.bpm;
+        //private NoteType NoteType=>Segemnt.noteType;
         [SerializeField]private int noteBegin,noteEnd;
         [OnValueChanged("UpdateBlock")]
         [SerializeField]private int blockPrefabIndex;
@@ -81,7 +81,7 @@ namespace MusicTogether.DancingBallArchived.Maker
         {
             float noteIndex = noteBegin + index;
             int insertIndex = blockMakers.FindIndex(a => a.blockHolder.noteIndex > noteIndex);
-            bool isClickNote = Segemnt.notes.Exists(a=>a == (int)noteIndex);
+            //bool isClickNote = Segemnt.notes.Exists(a=>a == (int)noteIndex);
             
             var obj = new GameObject($"BlockHolder{index}", typeof(BlockMaker));
             var maker = obj.AddComponent<BlockMaker>();
@@ -89,7 +89,7 @@ namespace MusicTogether.DancingBallArchived.Maker
             
             obj.transform.SetParent(transform);
             obj.transform.SetAsLastSibling();
-            maker.Init(this,roadHolder,holder,BlockPrefab,index,noteIndex,isClickNote);
+            //maker.Init(this,roadHolder,holder,BlockPrefab,index,noteIndex,isClickNote);
             
             blockMakers.Insert(insertIndex,maker);
             BlockHolders.Insert(insertIndex,holder);
@@ -147,9 +147,9 @@ namespace MusicTogether.DancingBallArchived.Maker
                 mapHolder.tapPrefabs[roadHolder.tapPrefabIndex].GetComponent<Tap>().timeRange.startTime;
             foreach (var blockHolder in BlockHolders)
             {
-                float noteTime = (float)NoteConverter.GetNoteTime(BPM,NoteType,blockHolder.noteIndex);
-                blockHolder.animTime = noteTime + blockAdvanceTime;
-                blockHolder.tapTime = noteTime + tapAdvanceTime;
+                //float noteTime = (float)NoteConverter.GetNoteTime(BPM,NoteType,blockHolder.noteIndex);
+                //blockHolder.animTime = noteTime + blockAdvanceTime;
+                //blockHolder.tapTime = noteTime + tapAdvanceTime;
             }
         }
     }

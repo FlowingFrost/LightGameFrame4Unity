@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using MusicTogether.General;
+using MusicTogether.MusicSampling;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using Sirenix.Utilities;
@@ -14,7 +15,8 @@ namespace MusicTogether.DancingBall.Data
     public class RoadData
     {
         public string roadName;
-        public int targetSegmentIndex;
+        //[Obsolete] public int targetSegmentIndex;
+        public string targetSegmentName;
         public int noteBeginIndex;
         public int noteEndIndex;
         public int BlockCount => noteEndIndex - noteBeginIndex + 1;
@@ -24,10 +26,9 @@ namespace MusicTogether.DancingBall.Data
         [ListDrawerSettings(DefaultExpandedState = false)]
         [OdinSerialize] public List<IBlockDisplacementData> blockDisplacementDataList = new List<IBlockDisplacementData>();
 
-        public RoadData(int roadIndexGlobal, int targetSegmentIndex = 0, int noteBeginIndex = -1, int noteEndIndex = -1)
+        public RoadData(string targetSegmentName, int noteBeginIndex = -1, int noteEndIndex = -1)
         {
-            //this.roadIndex_Global = roadIndexGlobal;
-            this.targetSegmentIndex = targetSegmentIndex;
+            this.targetSegmentName = targetSegmentName;
             this.noteBeginIndex = noteBeginIndex;
             this.noteEndIndex = noteEndIndex;
         }
@@ -153,13 +154,16 @@ namespace MusicTogether.DancingBall.Data
     [CreateAssetMenu(menuName = "MusicTogether/DancingBall_SceneData", fileName = "NewSceneData")]
     public class SceneData : SerializedScriptableObject
     {
-        public InputNoteData inputNoteData;
-        public List<Segemnt> SegmentList => inputNoteData.noteLists;
+        //[Obsolete] public InputNoteData inputNoteData;
+        public AudioSamplingData audioSamplingData;
+        //[Obsolete] public List<Segemnt> SegmentList => inputNoteData.noteLists;
+        public List<SamplingSegment> SamplingSegments => audioSamplingData.segments;
 
         //[ListDrawerSettings(CustomAddFunction = nameof(AddRoadData))]
         [NonSerialized][OdinSerialize]public List<RoadData> roadDataList = new List<RoadData>();
 
         // Note数据操作=================================================================================
+        /*[Obsolete]
         private bool GetSegmentIndex(int targetSegmentIndex, out int segmentListIndex)
         {
             segmentListIndex = -1;
@@ -181,12 +185,20 @@ namespace MusicTogether.DancingBall.Data
             }
 
             return true;
-        }
+        }*/
+        /*[Obsolete]
         public bool GetSegment(int targetSegmentIndex, out Segemnt segment)
         {
             segment = new Segemnt();
             if (!GetSegmentIndex(targetSegmentIndex, out int segmentListIndex)) return false;
             segment = SegmentList[segmentListIndex];
+            return true;
+        }*/
+
+        public bool GetSegment(string segmentName, out SamplingSegment segment)
+        {
+            segment = SamplingSegments.Find((seg) => seg.name == segmentName);
+            if (segment == null) return false;
             return true;
         }
 
@@ -211,7 +223,7 @@ namespace MusicTogether.DancingBall.Data
                 .Select(rd => new
                 {
                     Data = rd,
-                    Time = GetSegment(rd.targetSegmentIndex, out var segment) 
+                    Time = GetSegment(rd.targetSegmentName, out var segment)
                         ? segment.GetNoteTimeAt(rd.noteBeginIndex) 
                         : 0
                 })
@@ -260,10 +272,10 @@ namespace MusicTogether.DancingBall.Data
         /// <summary>
         /// 创建并加入新的 RoadData，返回创建结果（失败返回 null）。
         /// </summary>
-        public RoadData CreateRoadData(string roadName, int segmentIndex, int noteBegin, int noteEnd)
+        public RoadData CreateRoadData(string roadName, string segmentName, int noteBegin, int noteEnd)
         {
             if (!ValidateRoadNameUnique(roadName)) return null;
-            var roadData = new RoadData(roadDataList.Count, segmentIndex, noteBegin, noteEnd)
+            var roadData = new RoadData(segmentName, noteBegin, noteEnd)
             {
                 roadName = roadName
             };

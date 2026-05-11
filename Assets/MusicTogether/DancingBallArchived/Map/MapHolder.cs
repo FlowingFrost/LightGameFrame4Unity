@@ -14,7 +14,7 @@ namespace MusicTogether.DancingBallArchived.Map
         public List<RoadHolder> roadHolders;
         
         [Title("Data")]
-        public InputNoteData inputNoteData;
+        //public InputNoteData inputNoteData;
         public GameObject[] blockPrefabs;
         public GameObject[] tapPrefabs;
 
