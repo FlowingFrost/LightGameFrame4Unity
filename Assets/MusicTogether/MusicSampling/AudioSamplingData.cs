@@ -10,10 +10,10 @@ namespace MusicTogether.MusicSampling
 {
     /// <summary>
     /// 单个采样段配置 —— 描述一段时间内的节拍信息与标记的音符。
-    /// 同一首歌的不同段落可以拥有各自的 BPM、拍型、细分粒度和时间范围。
+    /// 同一首歌的不同段落可以拥有各自的 BPM、拍型、细分粒度。
     /// <para>
-    /// 时间范围用"全局小节序号"表示：<see cref="startBarIndex"/> 是本段第一个小节在整首曲子中的全局小节编号。
-    /// 全局时间 = barIndex * (60 / bpm * beatsPerBar)。
+    /// 段与段之间紧密接续：seg[i+1].startTime == seg[i].endTime。
+    /// startTime / endTime 由 AudioSamplingData.RecalculateSegmentTimes() 统一计算并存储。
     /// </para>
     /// </summary>
     [Serializable]
@@ -22,14 +22,13 @@ namespace MusicTogether.MusicSampling
         [LabelText("名称")]
         public string name = "Segment";
 
-        //[BoxGroup("时间范围（全局小节序号）")]
-        [HorizontalGroup("时间范围（全局小节序号）"), LabelText("起始小节"), LabelWidth(60), Min(0)]
-        public int startBarIndex = 0;
+        [HorizontalGroup("小节配置"), LabelText("小节数"), LabelWidth(60), Min(1)]
+        public int barCount = 4;
 
-        [HorizontalGroup("时间范围（全局小节序号）"), LabelText("结束小节"), LabelWidth(60), Min(0)]
-        public int endBarIndex = 0;
+        [HorizontalGroup("小节配置"), LabelText("音符偏移"), LabelWidth(60)]
+        [Tooltip("段总音符数 = barCount * NotesPerBar + noteOffset。正值延长段尾，负值提前结束（用于在 mid-bar 处切换到下一段）。")]
+        public int noteOffset = 0;
 
-        //[BoxGroup("节拍配置")]HorizontalGroup("节拍配置"), 
         [LabelText("BPM"), LabelWidth(40), Range(60, 300)]
         public int bpm = 120;
 
@@ -43,6 +42,11 @@ namespace MusicTogether.MusicSampling
         [HideLabel, ListDrawerSettings(ShowFoldout = true, ShowPaging = true, DefaultExpandedState = false)]
         public List<int> markedNoteIndices = new List<int>();
 
+        // ── 存储的时间边界（由 AudioSamplingData.RecalculateSegmentTimes() 填充）──
+
+        [HideInInspector] public double startTime;
+        [HideInInspector] public double endTime;
+
         // ── 计算属性 ──────────────────────────────────────────────────────────
 
         /// <summary>每个音符的时长（秒）</summary>
@@ -54,20 +58,12 @@ namespace MusicTogether.MusicSampling
         /// <summary>每小节包含的音符数</summary>
         public int NotesPerBar => beatsPerBar * beatDivision;
 
-        /// <summary>
-        /// 本段起始的全局时间（秒）= startBarIndex * SecondsPerBar
-        /// </summary>
-        public double StartTime => startBarIndex * SecondsPerBar;
+        /// <summary>本段总音符数</summary>
+        public int TotalNotes => barCount * NotesPerBar + noteOffset;
 
-        /// <summary>
-        /// 本段结束的全局时间（秒）= (endBarIndex + 1) * SecondsPerBar（含尾小节的结束时刻）
-        /// </summary>
-        public double EndTime => (endBarIndex + 1) * SecondsPerBar;
-
-        /// <summary>
-        /// 本段声明的总小节数（endBarIndex >= startBarIndex 时有效，含首含尾闭区间）
-        /// </summary>
-        public int DeclaredBarCount => (endBarIndex >= startBarIndex) ? (endBarIndex - startBarIndex + 1) : 0;
+        /// <summary>获取段内第 localNoteIndex 个音符的全局时间（秒）</summary>
+        public double GetNoteTimeAt(int localNoteIndex)
+            => startTime + localNoteIndex * SecondsPerNote;
 
         // ── 音符标记操作 ──────────────────────────────────────────────────────
 
@@ -108,8 +104,7 @@ namespace MusicTogether.MusicSampling
     [CreateAssetMenu(fileName = "AudioSamplingData", menuName = "MusicTogether/Audio Sampling Data")]
     public class AudioSamplingData : ScriptableObject
     {
-        [InfoBox("与音频同步播放的参考视频，播放时自动静音 \n" + 
-                 "结束小节 ≤ 起始小节时，自动延伸到下一段起始或音频末尾")]
+        [InfoBox("与音频同步播放的参考视频，播放时自动静音")]
         //[BoxGroup("音频资源")]HorizontalGroup("音频资源/Row"), 
         [LabelText("音频文件"), LabelWidth(60)]
         public AudioClip audioClip;
@@ -159,11 +154,10 @@ namespace MusicTogether.MusicSampling
 #endif
         }
 
-        [HorizontalGroup("SegmentButtons"), Button("↕ 按起始小节排序", ButtonSizes.Medium), GUIColor(0.9f, 0.85f, 0.4f)]
-        private void SortSegmentsByStartBar()
+        [HorizontalGroup("SegmentButtons"), Button("🔄 重算段时间", ButtonSizes.Medium), GUIColor(0.55f, 0.75f, 1f)]
+        private void RecalculateTimesButton()
         {
-            if (segments == null || segments.Count < 2) return;
-            segments.Sort((a, b) => a.startBarIndex.CompareTo(b.startBarIndex));
+            RecalculateSegmentTimes();
 #if UNITY_EDITOR
             UnityEditor.EditorUtility.SetDirty(this);
 #endif
@@ -177,16 +171,13 @@ namespace MusicTogether.MusicSampling
             bool changed = false;
             foreach (var seg in segments)
             {
-                // 只有当设置了有效的结束小节时才进行裁剪
-                if (seg.endBarIndex >= seg.startBarIndex)
+                int maxNotes = seg.TotalNotes;
+                if (maxNotes <= 0) continue;
+                int removedCount = seg.markedNoteIndices.RemoveAll(idx => idx >= maxNotes);
+                if (removedCount > 0)
                 {
-                    int maxNotes = seg.DeclaredBarCount * seg.NotesPerBar;
-                    int removedCount = seg.markedNoteIndices.RemoveAll(idx => idx >= maxNotes);
-                    if (removedCount > 0)
-                    {
-                        changed = true;
-                        Debug.Log($"[AudioSamplingData] Segment '{seg.name}': Removed {removedCount} out-of-bounds notes.");
-                    }
+                    changed = true;
+                    Debug.Log($"[AudioSamplingData] Segment '{seg.name}': Removed {removedCount} out-of-bounds notes.");
                 }
             }
 
@@ -234,47 +225,29 @@ namespace MusicTogether.MusicSampling
         // ── 跨段时间工具 ──────────────────────────────────────────────────────
 
         /// <summary>
-        /// 获取指定段落在时间轴上的起始时间（秒）。
-        /// = startBarIndex * SecondsPerBar（使用本段 BPM）
+        /// 获取指定段落的起始时间（秒）。直接返回存储的 startTime。
         /// </summary>
         public double GetSegmentStartTime(int segmentIndex)
         {
             if (segments == null || segmentIndex < 0 || segmentIndex >= segments.Count)
                 return 0;
-            return segments[segmentIndex].StartTime;
+            return segments[segmentIndex].startTime;
         }
 
         /// <summary>
-        /// 获取指定段落的时长（秒）。
-        /// 优先使用段落自身声明的 endBarIndex；
-        /// 若 endBarIndex 未设置（≤ startBarIndex），则用下一段的 StartTime 或 audioClip.length 作为边界。
+        /// 获取指定段落的时长（秒）= endTime - startTime。
         /// </summary>
         public double GetSegmentDuration(int segmentIndex)
         {
             if (segments == null || segmentIndex < 0 || segmentIndex >= segments.Count)
                 return 0;
-
             var seg = segments[segmentIndex];
-
-            // 优先使用显式声明的 endBarIndex
-            if (seg.endBarIndex > seg.startBarIndex)
-                return seg.DeclaredBarCount * seg.SecondsPerBar;
-
-            // 退回：用下一段的 StartTime 推算
-            if (segmentIndex + 1 < segments.Count)
-                return segments[segmentIndex + 1].StartTime - seg.StartTime;
-
-            // 最后一段：延伸到 audioClip 末尾
-            if (audioClip != null && audioClip.length > seg.StartTime)
-                return audioClip.length - seg.StartTime;
-
-            return 0;
+            return seg.endTime - seg.startTime;
         }
 
         /// <summary>
         /// 返回给定全局时间下，所有"时间范围覆盖该时刻"的段落各自的当前音符。
-        /// 用于多段重叠时同时高亮所有活跃段的当前音符。
-        /// 判定标准：segStart &lt;= globalTime &lt; segEnd（有显式 endBarIndex 时用 EndTime，否则用下一段起始或音频末尾）。
+        /// 段与段之间紧密接续无间隙，直接使用存储的 startTime / endTime。
         /// </summary>
         public List<(int segIdx, int localNoteIdx)> GetAllActiveNotesAtTime(double globalTime)
         {
@@ -283,20 +256,12 @@ namespace MusicTogether.MusicSampling
 
             for (int i = 0; i < segments.Count; i++)
             {
-                double segStart = GetSegmentStartTime(i);
                 var seg = segments[i];
+                if (globalTime < seg.startTime || globalTime >= seg.endTime) continue;
 
-                double segEnd = seg.endBarIndex > seg.startBarIndex
-                    ? seg.EndTime
-                    : (i + 1 < segments.Count
-                        ? GetSegmentStartTime(i + 1)
-                        : double.MaxValue);
-
-                if (globalTime < segStart || globalTime >= segEnd) continue;
-
-                double localTime = globalTime - segStart;
+                double localTime = globalTime - seg.startTime;
                 int localNote = Mathf.RoundToInt((float)(localTime * seg.bpm * seg.beatDivision / 60.0));
-                int maxNote = GetSegmentTotalNotes(i);
+                int maxNote = seg.TotalNotes;
                 if (maxNote > 0)
                     localNote = Mathf.Clamp(localNote, 0, maxNote - 1);
 
@@ -308,8 +273,7 @@ namespace MusicTogether.MusicSampling
 
         /// <summary>
         /// 根据全局时间获取 (segmentIndex, localNoteIndex) 对。
-        /// 当时间落在两段之间的间隙时，夹紧到前一段的最后一个音符，
-        /// 等待时间进入下一段后再切换——避免播放头在 UI 上飞出段落范围。
+        /// 段之间紧密接续无间隙，时间超出最后一段时夹紧到最后一段末尾。
         /// </summary>
         public (int segIdx, int localNoteIdx) GetSegmentNoteAtTime(double globalTime)
         {
@@ -318,16 +282,12 @@ namespace MusicTogether.MusicSampling
 
             for (int i = segments.Count - 1; i >= 0; i--)
             {
-                double segStart = GetSegmentStartTime(i);
-                if (globalTime >= segStart)
+                var seg = segments[i];
+                if (globalTime >= seg.startTime)
                 {
-                    double localTime = globalTime - segStart;
-                    var seg = segments[i];
+                    double localTime = globalTime - seg.startTime;
                     int localNote = Mathf.RoundToInt((float)(localTime * seg.bpm * seg.beatDivision / 60.0));
-
-                    // 如果段落有显式结束边界，将 localNote 夹紧到段内，
-                    // 防止间隙时间让 localNote 超出该段的 UI 范围
-                    int maxNote = GetSegmentTotalNotes(i);
+                    int maxNote = seg.TotalNotes;
                     if (maxNote > 0)
                         localNote = Mathf.Clamp(localNote, 0, maxNote - 1);
 
@@ -397,37 +357,13 @@ namespace MusicTogether.MusicSampling
         }
 
         /// <summary>
-        /// 获取指定段落在波形 UI 上实际显示的总音符数。
-        /// 优先使用显式声明的 endBarIndex（DeclaredBarCount × NotesPerBar）；
-        /// 仅当未声明 endBarIndex 时，才退回到时间推算。
+        /// 获取指定段落的音符总数 = barCount * NotesPerBar + noteOffset。
         /// </summary>
         public int GetSegmentTotalNotes(int segIdx)
         {
             if (segments == null || segIdx < 0 || segIdx >= segments.Count)
                 return 0;
-
-            var seg = segments[segIdx];
-
-            // 优先：endBarIndex > startBarIndex 时视为有效声明（含尾闭区间，至少2小节）
-            if (seg.endBarIndex > seg.startBarIndex)
-                return seg.DeclaredBarCount * seg.NotesPerBar;
-
-            // 退回：用时间推算（段落未声明 endBarIndex 时，如单段或最后一段）
-            if (audioClip == null) return 0;
-            double dur = GetSegmentDuration(segIdx);
-            return Mathf.CeilToInt((float)(dur * seg.bpm * seg.beatDivision / 60.0));
-        }
-
-        /// <summary>
-        /// 将 (segIdx, localNoteIdx) 转换为全局音符序号。
-        /// 全局序号定义：全局音符序号 = startBarIndex * NotesPerBar + localNoteIdx。
-        /// </summary>
-        public int GetGlobalNoteIndex(int segIdx, int localNoteIdx)
-        {
-            if (segments == null || segIdx < 0 || segIdx >= segments.Count)
-                return localNoteIdx;
-            var seg = segments[segIdx];
-            return seg.startBarIndex * seg.NotesPerBar + localNoteIdx;
+            return segments[segIdx].TotalNotes;
         }
 
         // ── 向后兼容的单段音符操作 ────────────────────────────────────────────
@@ -530,31 +466,25 @@ namespace MusicTogether.MusicSampling
 #endif
         }
 
-        // ── Editor 验证 ───────────────────────────────────────────────────────
+        // ── 段时间重算 ───────────────────────────────────────────────────────
 
         /// <summary>
-        /// 判断给定的全局时间是否处于两段之间的"间隙"区域（不属于任何段落的声明范围）。
-        /// 仅当段落有显式 endBarIndex 时才会产生间隙；若段落未声明结束，则视为连续。
+        /// 从 seg[0] 开始逐段计算并存储 startTime / endTime。
+        /// seg[0].startTime = 0，seg[i+1].startTime = seg[i].endTime。
         /// </summary>
-        public bool IsTimeInGap(double globalTime)
+        public void RecalculateSegmentTimes()
         {
-            if (segments == null || segments.Count == 0) return false;
+            if (segments == null || segments.Count == 0) return;
 
+            double currentTime = 0;
             for (int i = 0; i < segments.Count; i++)
             {
                 var seg = segments[i];
-                double segStart = GetSegmentStartTime(i);
-                double segEnd   = seg.endBarIndex > seg.startBarIndex
-                    ? seg.EndTime                              // 有显式结束边界（含尾小节末尾）
-                    : (i + 1 < segments.Count                 // 无显式结束：延续到下一段
-                        ? GetSegmentStartTime(i + 1)
-                        : double.MaxValue);                   // 最后一段：无边界
-
-                if (globalTime >= segStart && globalTime < segEnd)
-                    return false; // 在段内
+                seg.startTime = currentTime;
+                double duration = seg.TotalNotes * seg.SecondsPerNote;
+                seg.endTime = currentTime + duration;
+                currentTime = seg.endTime;
             }
-
-            return true; // 不在任何段内 → 在间隙中
         }
 
 #if UNITY_EDITOR
@@ -562,39 +492,18 @@ namespace MusicTogether.MusicSampling
         {
             if (segments == null || segments.Count == 0) return;
 
-            // 注意：不再自动排序，排序请使用 Inspector 中的"↕ 按起始小节排序"按钮
-
-            // 检测小节序号重叠（含尾闭区间：cur 占用 [startBarIndex, endBarIndex]）
-            for (int i = 0; i < segments.Count - 1; i++)
-            {
-                var cur  = segments[i];
-                var next = segments[i + 1];
-
-                // cur 有显式声明 && cur 末尾小节 >= 下一段起始小节 → 重叠
-                if (cur.endBarIndex > cur.startBarIndex && cur.endBarIndex >= next.startBarIndex)
-                {
-                    Debug.LogWarning(
-                        $"[AudioSamplingData] \"{name}\": " +
-                        $"段落 \"{cur.name}\" 的 endBarIndex ({cur.endBarIndex}) " +
-                        $">= 下一段 \"{next.name}\" 的 startBarIndex ({next.startBarIndex})，" +
-                        $"两段发生重叠，将被分配到不同轨道。");
-                }
-            }
+            RecalculateSegmentTimes();
 
             // 检查最后一段不超出 audioClip 时长
             if (audioClip != null && segments.Count > 0)
             {
                 var last = segments[segments.Count - 1];
-                if (last.endBarIndex > last.startBarIndex)
+                if (last.endTime > audioClip.length + 0.001)
                 {
-                    double endSec = last.EndTime;
-                    if (endSec > audioClip.length + 0.001)
-                    {
-                        Debug.LogWarning(
-                            $"[AudioSamplingData] \"{name}\": " +
-                            $"最后一段 \"{last.name}\" 的 endBarIndex ({last.endBarIndex}) " +
-                            $"对应时间 {endSec:F3}s，超过了 AudioClip 时长 ({audioClip.length:F3}s)。");
-                    }
+                    Debug.LogWarning(
+                        $"[AudioSamplingData] \"{name}\": " +
+                        $"最后一段 \"{last.name}\" 的结束时间 {last.endTime:F3}s，" +
+                        $"超过了 AudioClip 时长 ({audioClip.length:F3}s)。");
                 }
             }
         }

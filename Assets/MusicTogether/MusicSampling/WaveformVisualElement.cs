@@ -170,7 +170,7 @@ namespace MusicTogether.MusicSampling
             // 小节顶部标记行
             var barMarker = new VisualElement();
             barMarker.AddToClassList("bar-marker");
-            var barLabel = new Label($"{seg.startBarIndex + barIndex + 1}");
+            var barLabel = new Label($"{barIndex + 1}");
             barLabel.AddToClassList("bar-label");
             barMarker.Add(barLabel);
             barContainer.Add(barMarker);
@@ -312,9 +312,8 @@ namespace MusicTogether.MusicSampling
             AddToClassList("note-element");
             AddToClassList(_isMarked ? "note-marked" : "note-normal");
 
-            // ── 顶端全局序号标签 ──────────────────────────────────────────────
-            int globalIdx = data.GetGlobalNoteIndex(segIdx, localNoteIndex);
-            var indexLabel = new Label(globalIdx.ToString());
+            // ── 顶端局部序号标签 ──────────────────────────────────────────────
+            var indexLabel = new Label(localNoteIndex.ToString());
             indexLabel.AddToClassList("note-index-label");
             Add(indexLabel);
             // ────────────────────────────────────────────────────────────────

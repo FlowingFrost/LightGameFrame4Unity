@@ -21,15 +21,10 @@ namespace MusicTogether.MusicSampling.Editor
         [LabelText("段落名称"), LabelWidth(80)]
         public string segmentName = "Segment";
 
-        [BoxGroup("时间范围（全局小节序号）")]
-        [HorizontalGroup("时间范围（全局小节序号）/Row")]
-        [LabelText("起始小节"), LabelWidth(60), Min(0)]
-        public int startBarIndex = 0;
-
-        [HorizontalGroup("时间范围（全局小节序号）/Row")]
-        [LabelText("结束小节"), LabelWidth(60), Min(0)]
-        [InfoBox("结束小节 ≤ 起始小节时，自动延伸到下一段起始或音频末尾", InfoMessageType.None)]
-        public int endBarIndex = 0;
+        [BoxGroup("小节配置")]
+        [HorizontalGroup("小节配置/Row")]
+        [LabelText("小节数"), LabelWidth(60), Min(1)]
+        public int barCount = 4;
 
         [BoxGroup("节拍配置")]
         [HorizontalGroup("节拍配置/Row")]
@@ -62,8 +57,8 @@ namespace MusicTogether.MusicSampling.Editor
 
         [ShowInInspector, ReadOnly]
         [BoxGroup("预览信息")]
-        [LabelText("起始时间(s)"), LabelWidth(90)]
-        private double StartTime => System.Math.Round(startBarIndex * SecondsPerBar, 3);
+        [LabelText("段总时长(s)"), LabelWidth(90)]
+        private double SegmentDuration => System.Math.Round(barCount * SecondsPerBar, 3);
 
         // ── 静态入口 ──────────────────────────────────────────────────────────
 
@@ -84,12 +79,8 @@ namespace MusicTogether.MusicSampling.Editor
                 window.bpm          = last.bpm;
                 window.beatsPerBar  = last.beatsPerBar;
                 window.beatDivision = last.beatDivision;
-                // 起始小节接续上一段的结束
-                window.startBarIndex = last.endBarIndex > last.startBarIndex
-                    ? last.endBarIndex + 1
-                    : last.startBarIndex + 1;
-                window.endBarIndex   = window.startBarIndex;
-                window.segmentName   = $"Segment {target.segments.Count + 1}";
+                window.barCount     = last.barCount;
+                window.segmentName  = $"Segment {target.segments.Count + 1}";
             }
             else
             {
@@ -112,17 +103,17 @@ namespace MusicTogether.MusicSampling.Editor
             var seg = new SamplingSegment
             {
                 name          = string.IsNullOrWhiteSpace(segmentName) ? "Segment" : segmentName.Trim(),
-                startBarIndex = startBarIndex,
-                endBarIndex   = endBarIndex,
+                barCount      = barCount,
                 bpm           = bpm,
                 beatsPerBar   = beatsPerBar,
                 beatDivision  = beatDivision,
             };
 
             _target.segments.Add(seg);
+            _target.RecalculateSegmentTimes();
             EditorUtility.SetDirty(_target);
 
-            Debug.Log($"[AudioSamplingData] 已添加段落 \"{seg.name}\"（小节 {seg.startBarIndex}→{seg.endBarIndex}，{seg.bpm} BPM）");
+            Debug.Log($"[AudioSamplingData] 已添加段落 \"{seg.name}\"（{seg.barCount} 小节，{seg.bpm} BPM，时长 {seg.endTime - seg.startTime:F3}s）");
             Close();
         }
 

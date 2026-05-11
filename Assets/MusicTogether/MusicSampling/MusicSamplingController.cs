@@ -99,10 +99,7 @@ namespace MusicTogether.MusicSampling
             _ui.SetScrollOffset(Mathf.Max(0, pixelX - viewportW / 2f));
 
             // 高亮
-            if (_samplingData.IsTimeInGap(time))
-                UpdateHighlightedNotes(null);
-            else
-                UpdateHighlightedNotes(_samplingData.GetAllActiveNotesAtTime(time));
+            UpdateHighlightedNotes(_samplingData.GetAllActiveNotesAtTime(time));
 
             // 信息标签
             UpdateInfoLabels(time);
