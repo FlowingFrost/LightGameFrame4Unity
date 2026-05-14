@@ -28,6 +28,7 @@ namespace MusicTogether.DancingBall.EditorTool
         public Action<IRoad> OnRoadSelectionChanged;
         public Action<IBlock, IBlockDisplacementData> OnBlockSelectionChanged;
         public Action<GameObject> LookAtObject;
+        public Action OnRoadSwitchCompleted;
         public Action<List<RoadData>> OnRoadListChanged;
         public Action<List<IBlockDisplacementData>> OnBlockDisplacementListChanged;
 
@@ -36,6 +37,7 @@ namespace MusicTogether.DancingBall.EditorTool
 
         private EditorShortcutDispatcher _dispatcher;
         private object _activeInputHandler;
+        public bool IsInputEnabled { get; set; } = true;
 
         public EditorShortcutDispatcher Dispatcher => _dispatcher;
 
@@ -63,6 +65,7 @@ namespace MusicTogether.DancingBall.EditorTool
         /// <summary>按键中转入口，仅活跃输入源的键会被处理。</summary>
         public bool ProcessKey(KeyCode key, object sender)
         {
+            if (!IsInputEnabled) return false;
             if (_activeInputHandler != null && _activeInputHandler != sender) return false;
             return _dispatcher.ProcessKey(key);
         }
@@ -248,6 +251,12 @@ namespace MusicTogether.DancingBall.EditorTool
             OnSelectionChanged?.Invoke(SelectedRoadIndex, SelectedBlockIndex);
             if (IsUnityObjectDestroyed(selectedBlock)) return;
             LookAtObject?.Invoke(selectedBlock.Transform.gameObject);
+
+            if (SelectedBlockIndex == 0)
+            {
+                OnRoadSwitchCompleted?.Invoke();
+                SelectGameObject(selectedRoad);
+            }
         }
 
         //操作功能
@@ -583,5 +592,13 @@ namespace MusicTogether.DancingBall.EditorTool
             }
             return $"{name}_{suffix}";
         }
+
+#if UNITY_EDITOR
+        private static void SelectGameObject<T>(T obj) where T : class
+        {
+            if (obj is MonoBehaviour mb && mb != null)
+                UnityEditor.Selection.activeGameObject = mb.gameObject;
+        }
+#endif
     }
 }

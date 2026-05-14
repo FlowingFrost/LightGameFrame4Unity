@@ -287,6 +287,7 @@ namespace MusicTogether.DancingBall.Data
             {
                 roadName = roadName
             };
+            roadData.blockDisplacementDataList.Add(new ClassicBlockDisplacementData(0));
             roadDataList.Add(roadData);
             RefreshRoadDataList();
             return roadData;

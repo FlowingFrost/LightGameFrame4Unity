@@ -190,6 +190,7 @@ namespace MusicTogether.DancingBall.Player
                     transform.position = CurrentData.GetPlayerPosition(ballRadius);
                     transform.GetChild(0).rotation = CurrentData.GetPlayerRotation();
                     RecordPreviousMotionPoint();
+                    //GotoNextData();//传送到第0，立刻开始前往第1
                     return true;
                 }
             }
@@ -335,6 +336,10 @@ namespace MusicTogether.DancingBall.Player
                         GotoNextData();
                     }
                     //previousMotionPointTime = PreviousDataTime;
+                }
+                else if (currentDataIndex == 0)//第0项不可设为需要点击。
+                {
+                    GotoNextData();
                 }
                 /*else if (currentTime > nextData.Time)
                 {

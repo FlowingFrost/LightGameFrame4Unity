@@ -18,7 +18,6 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
         private IBlock _currentBlock;
         private IBlockDisplacementData _currentDisplacementData;
 
-        private bool _toolEnabled = true;
         private bool _hadExistingData;
 
         public SelectionViewController(EditorCenter editorCenter)
@@ -38,14 +37,15 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
 
         public void OnKeyDown(KeyCode key)
         {
-            if (!_toolEnabled) return;
+            if (_editorCenter != null && !_editorCenter.IsInputEnabled) return;
             _editorCenter?.ProcessKey(key, this);
         }
 
         public void Bind(VisualElement root)
         {
             _selectionWindowManager = new SelectionWindowManager(root);
-            _selectionWindowManager.EnableChanged = enabled => _toolEnabled = enabled;
+            _selectionWindowManager.EnableChanged = enabled => { if (_editorCenter != null) _editorCenter.IsInputEnabled = enabled; };
+
             _selectionWindowManager.RetryBind = RetryBind;
             _selectionWindowManager.DefaultDisplacementTypeChanged = OnDefaultDisplacementTypeChanged;
 
@@ -62,6 +62,7 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
                 _editorCenter.OnSelectionChanged -= _selectionWindowManager.UpdateSelectionInfo;
                 _editorCenter.OnBlockSelectionChanged -= OnBlockSelectionChanged;
                 _editorCenter.LookAtObject -= LookAt;
+                _editorCenter.OnRoadSwitchCompleted -= OnRoadSwitchCompleted;
             }
         }
 
@@ -80,6 +81,7 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
             _editorCenter.OnSelectionChanged += _selectionWindowManager.UpdateSelectionInfo;
             _editorCenter.OnBlockSelectionChanged += OnBlockSelectionChanged;
             _editorCenter.LookAtObject += LookAt;
+            _editorCenter.OnRoadSwitchCompleted += OnRoadSwitchCompleted;
         }
 
         private void BindEditorCenter()
@@ -94,7 +96,7 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
 
             _selectionWindowManager.JumpTo = (roadIndex, blockIndex) => _editorCenter.JumpTo(roadIndex, blockIndex);
             _selectionWindowManager.SetBindedViewVisible(true);
-            _selectionWindowManager.SetEnabledState(true);
+            _selectionWindowManager.SetEnabledState(_editorCenter?.IsInputEnabled ?? true);
             _selectionWindowManager.SetDefaultDisplacementType(_defaultDisplacementType);
         }
 
@@ -103,14 +105,19 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
         /// </summary>
         public void RefreshHint()
         {
-            string hint = _toolEnabled
+            bool enabled = _editorCenter?.IsInputEnabled ?? true;
+            string hint = enabled
                 ? _editorCenter?.Dispatcher?.HintText ?? "← / → 切换"
                 : "已禁用";
             _selectionWindowManager?.SetHint(hint);
-            _selectionWindowManager?.SetEnabledState(_toolEnabled);
+            _selectionWindowManager?.SetEnabledState(enabled);
         }
 
         // ---- 事件响应 ----
+
+        private void OnRoadSwitchCompleted()
+        {
+        }
 
         private void OnBlockSelectionChanged(IBlock block, IBlockDisplacementData data)
         {
