@@ -157,7 +157,15 @@ namespace MusicTogether.DancingBall.Data
         //[Obsolete] public InputNoteData inputNoteData;
         public AudioSamplingData audioSamplingData;
         //[Obsolete] public List<Segemnt> SegmentList => inputNoteData.noteLists;
-        public List<SamplingSegment> SamplingSegments => audioSamplingData.segments;
+        public List<SamplingSegment> SamplingSegments
+        {
+            get
+            {
+                if (audioSamplingData == null)
+                    throw new InvalidOperationException("SceneData.audioSamplingData 未赋值，请在 Inspector 中填写。");
+                return audioSamplingData.segments;
+            }
+        }
 
         //[ListDrawerSettings(CustomAddFunction = nameof(AddRoadData))]
         [NonSerialized][OdinSerialize]public List<RoadData> roadDataList = new List<RoadData>();
