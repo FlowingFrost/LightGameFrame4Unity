@@ -105,7 +105,7 @@ InitTestScene*.unity*
 
 #不必要的资源
 Assets/TextMesh Pro/
-Assets/Plugins/
+Assets/Plugins/DOTween
 Assets/Resources/Fonts/
 Assets/MusicTogether/Scenes/
 Assets/[#]MusicTogetherCore/
