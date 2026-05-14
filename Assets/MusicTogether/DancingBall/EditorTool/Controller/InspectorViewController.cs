@@ -275,8 +275,8 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
             _windowManager.SetRoadTargetDataName(road.RoadData.roadName);
             _windowManager.SetRoadSegmentOptions(
                 GetSegmentDisplayNames(_editorCenter.targetMap?.SceneData),
-                GetSegmentIndices(_editorCenter.targetMap?.SceneData),
-                road.RoadData.targetSegmentIndex);
+                GetSegmentNames(_editorCenter.targetMap?.SceneData),
+                road.RoadData.targetSegmentName);
             _windowManager.BindRoadList(_editorCenter.targetMap.SceneData.roadDataList, _editorCenter.SelectedRoadIndex);
             _windowManager.BindBlockDisplacementList(road.RoadData.blockDisplacementDataList, _editorCenter.SelectedBlockIndex);
             _windowManager.SetBlockDisplacementShiftVisible(true);
@@ -442,10 +442,10 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
         /// <summary>
         /// 由 Host 在创建道路对话框确认后调用。
         /// </summary>
-        public void OnRoadCreated(string roadName, int segmentIndex, int noteBegin, int noteEnd)
+        public void OnRoadCreated(string roadName, string segmentName, int noteBegin, int noteEnd)
         {
             if (!VerifyMap()) return;
-            _editorCenter.CreateRoad(roadName, segmentIndex, noteBegin, noteEnd);
+            _editorCenter.CreateRoad(roadName, segmentName, noteBegin, noteEnd);
             _windowManager.BindRoadList(
                 _editorCenter.targetMap.SceneData.roadDataList,
                 _editorCenter.SelectedRoadIndex);
@@ -507,10 +507,10 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
             _editorCenter.selectedRoad.RefreshBlockInfoDisplay();
         }
 
-        private void RoadModifyTargetSegmentRequested(int segmentIndex)
+        private void RoadModifyTargetSegmentRequested(string segmentName)
         {
             if (!VerifyRoad()) return;
-            _editorCenter.selectedRoad.ModifyTargetSegmentName(segmentIndex);
+            _editorCenter.selectedRoad.ModifyTargetSegmentName(segmentName);
         }
 
         private void RoadModifyNoteRangeRequested(int begin, int end)
@@ -540,22 +540,23 @@ namespace MusicTogether.DancingBall.EditorTool.Controller
         private static List<string> GetSegmentDisplayNames(SceneData sceneData)
         {
             var result = new List<string>();
-            if (sceneData?.SegmentList == null) return result;
-            foreach (var segment in sceneData.SegmentList.OrderBy(seg => seg.Index))
+            if (sceneData?.SamplingSegments == null) return result;
+            for (int i = 0; i < sceneData.SamplingSegments.Count; i++)
             {
-                var displayName = string.IsNullOrWhiteSpace(segment.name) ? "Unnamed" : segment.name;
-                result.Add($"{segment.Index} | {displayName}");
+                var seg = sceneData.SamplingSegments[i];
+                var displayName = string.IsNullOrWhiteSpace(seg.name) ? "Unnamed" : seg.name;
+                result.Add($"{i} | {displayName}");
             }
             return result;
         }
 
-        private static List<int> GetSegmentIndices(SceneData sceneData)
+        private static List<string> GetSegmentNames(SceneData sceneData)
         {
-            var result = new List<int>();
-            if (sceneData?.SegmentList == null) return result;
-            foreach (var segment in sceneData.SegmentList.OrderBy(seg => seg.Index))
+            var result = new List<string>();
+            if (sceneData?.SamplingSegments == null) return result;
+            foreach (var seg in sceneData.SamplingSegments)
             {
-                result.Add(segment.Index);
+                result.Add(seg.name);
             }
             return result;
         }

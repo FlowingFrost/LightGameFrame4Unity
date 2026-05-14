@@ -260,7 +260,7 @@ namespace MusicTogether.MusicSampling
                 if (globalTime < seg.startTime || globalTime >= seg.endTime) continue;
 
                 double localTime = globalTime - seg.startTime;
-                int localNote = Mathf.RoundToInt((float)(localTime * seg.bpm * seg.beatDivision / 60.0));
+                int localNote = Mathf.FloorToInt((float)(localTime * seg.bpm * seg.beatDivision / 60.0));
                 int maxNote = seg.TotalNotes;
                 if (maxNote > 0)
                     localNote = Mathf.Clamp(localNote, 0, maxNote - 1);
@@ -286,7 +286,7 @@ namespace MusicTogether.MusicSampling
                 if (globalTime >= seg.startTime)
                 {
                     double localTime = globalTime - seg.startTime;
-                    int localNote = Mathf.RoundToInt((float)(localTime * seg.bpm * seg.beatDivision / 60.0));
+                    int localNote = Mathf.FloorToInt((float)(localTime * seg.bpm * seg.beatDivision / 60.0));
                     int maxNote = seg.TotalNotes;
                     if (maxNote > 0)
                         localNote = Mathf.Clamp(localNote, 0, maxNote - 1);

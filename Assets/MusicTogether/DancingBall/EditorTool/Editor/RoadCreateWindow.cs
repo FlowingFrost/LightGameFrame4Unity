@@ -13,11 +13,11 @@ namespace MusicTogether.DancingBall.EditorTool.Editor
     public class RoadCreateWindow : UnityEditor.EditorWindow
     {
         private const string UxmlPath = "Assets/MusicTogether/DancingBall/UI/RoadCreateWindow.uxml";
-        private Action<string, int, int, int> onCreate;
+        private Action<string, string, int, int> onCreate;
         private IRoad templateRoad;
         private RoadCreateWindowManager _windowManager;
 
-        public static void ShowWindow(IRoad template, Action<string, int, int, int> onCreate)
+        public static void ShowWindow(IRoad template, Action<string, string, int, int> onCreate)
         {
             var window = CreateInstance<RoadCreateWindow>();
             window.titleContent = new GUIContent("Create Road");
@@ -43,39 +43,40 @@ namespace MusicTogether.DancingBall.EditorTool.Editor
 
             var data = templateRoad?.RoadData;
             var sceneData = templateRoad?.Map?.SceneData;
-            _windowManager.SetSegmentOptions(GetSegmentDisplayNames(sceneData), GetSegmentIndices(sceneData));
+            _windowManager.SetSegmentOptions(GetSegmentDisplayNames(sceneData), GetSegmentNames(sceneData));
             _windowManager.SetDefaults(
                 data == null ? "Road_New" : $"{data.roadName}_New",
-                data?.targetSegmentIndex ?? 0,
+                data?.targetSegmentName ?? "",
                 data?.noteBeginIndex ?? 0,
                 data?.noteEndIndex ?? 0);
         }
 
-        private void OnCreateRequested(string roadName, int segmentIndex, int noteBegin, int noteEnd)
+        private void OnCreateRequested(string roadName, string segmentName, int noteBegin, int noteEnd)
         {
-            onCreate?.Invoke(roadName, segmentIndex, noteBegin, noteEnd);
+            onCreate?.Invoke(roadName, segmentName, noteBegin, noteEnd);
             Close();
         }
 
         private static List<string> GetSegmentDisplayNames(SceneData sceneData)
         {
             var result = new List<string>();
-            if (sceneData?.SegmentList == null) return result;
-            foreach (var segment in sceneData.SegmentList.OrderBy(seg => seg.Index))
+            if (sceneData?.SamplingSegments == null) return result;
+            for (int i = 0; i < sceneData.SamplingSegments.Count; i++)
             {
-                var displayName = string.IsNullOrWhiteSpace(segment.name) ? "Unnamed" : segment.name;
-                result.Add($"{segment.Index} | {displayName}");
+                var seg = sceneData.SamplingSegments[i];
+                var displayName = string.IsNullOrWhiteSpace(seg.name) ? "Unnamed" : seg.name;
+                result.Add($"{i} | {displayName}");
             }
             return result;
         }
 
-        private static List<int> GetSegmentIndices(SceneData sceneData)
+        private static List<string> GetSegmentNames(SceneData sceneData)
         {
-            var result = new List<int>();
-            if (sceneData?.SegmentList == null) return result;
-            foreach (var segment in sceneData.SegmentList.OrderBy(seg => seg.Index))
+            var result = new List<string>();
+            if (sceneData?.SamplingSegments == null) return result;
+            foreach (var seg in sceneData.SamplingSegments)
             {
-                result.Add(segment.Index);
+                result.Add(seg.name);
             }
             return result;
         }

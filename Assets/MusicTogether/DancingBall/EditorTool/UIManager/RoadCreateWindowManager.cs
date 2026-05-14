@@ -8,15 +8,15 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
     public class RoadCreateWindowManager : UIManagerBase
     {
         private TextField _roadNameField;
-    private DropdownField _segmentField;
+        private DropdownField _segmentField;
         private IntegerField _noteBeginField;
         private IntegerField _noteEndField;
         private Button _confirmButton;
         private Button _cancelButton;
 
-    private readonly List<int> _segmentOptionIndices = new List<int>();
+        private readonly List<string> _segmentOptionNames = new List<string>();
 
-        public Action<string, int, int, int> CreateRequested { get; set; }
+        public Action<string, string, int, int> CreateRequested { get; set; }
         public Action CancelRequested { get; set; }
 
         public RoadCreateWindowManager(VisualElement root) : base(root)
@@ -24,25 +24,25 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
             BindElements();
         }
 
-        public void SetDefaults(string roadName, int segmentIndex, int noteBegin, int noteEnd)
+        public void SetDefaults(string roadName, string segmentName, int noteBegin, int noteEnd)
         {
             _roadNameField?.SetValueWithoutNotify(roadName ?? string.Empty);
-            SetSelectedSegment(segmentIndex);
+            SetSelectedSegment(segmentName);
             _noteBeginField?.SetValueWithoutNotify(noteBegin);
             _noteEndField?.SetValueWithoutNotify(noteEnd);
         }
 
-        public void SetSegmentOptions(IReadOnlyList<string> displayNames, IReadOnlyList<int> segmentIndices)
+        public void SetSegmentOptions(IReadOnlyList<string> displayNames, IReadOnlyList<string> segmentNames)
         {
             if (_segmentField == null) return;
-            _segmentOptionIndices.Clear();
+            _segmentOptionNames.Clear();
 
-            if (displayNames != null && segmentIndices != null)
+            if (displayNames != null && segmentNames != null)
             {
-                int count = Mathf.Min(displayNames.Count, segmentIndices.Count);
+                int count = Mathf.Min(displayNames.Count, segmentNames.Count);
                 for (int i = 0; i < count; i++)
                 {
-                    _segmentOptionIndices.Add(segmentIndices[i]);
+                    _segmentOptionNames.Add(segmentNames[i]);
                 }
                 _segmentField.choices = new List<string>(displayNames);
             }
@@ -58,20 +58,20 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
             }
         }
 
-        private int GetSelectedSegmentIndex()
+        private string GetSelectedSegmentName()
         {
             int selectedIndex = _segmentField?.index ?? -1;
-            if (selectedIndex >= 0 && selectedIndex < _segmentOptionIndices.Count)
+            if (selectedIndex >= 0 && selectedIndex < _segmentOptionNames.Count)
             {
-                return _segmentOptionIndices[selectedIndex];
+                return _segmentOptionNames[selectedIndex];
             }
-            return 0;
+            return "";
         }
 
-        private void SetSelectedSegment(int segmentIndex)
+        private void SetSelectedSegment(string segmentName)
         {
             if (_segmentField == null || _segmentField.choices == null) return;
-            int optionIndex = _segmentOptionIndices.IndexOf(segmentIndex);
+            int optionIndex = _segmentOptionNames.IndexOf(segmentName);
             if (optionIndex >= 0 && optionIndex < _segmentField.choices.Count)
             {
                 _segmentField.index = optionIndex;
@@ -105,7 +105,7 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
                 {
                     CreateRequested?.Invoke(
                         _roadNameField?.value ?? string.Empty,
-                        GetSelectedSegmentIndex(),
+                        GetSelectedSegmentName(),
                         _noteBeginField?.value ?? 0,
                         _noteEndField?.value ?? 0);
                 };

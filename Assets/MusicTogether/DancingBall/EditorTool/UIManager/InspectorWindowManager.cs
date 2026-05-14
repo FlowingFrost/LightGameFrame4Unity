@@ -115,7 +115,7 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
         public Action RoadRefreshBlocksRequested { get; set; }
         public Action RoadUpdateBlockTransformRequested { get; set; }
         public Action RoadRefreshBlockDisplayRequested { get; set; }
-        public Action<int> RoadModifyTargetSegmentRequested { get; set; }
+        public Action<string> RoadModifyTargetSegmentRequested { get; set; }
         public Action<int, int> RoadModifyNoteRangeRequested { get; set; }
         public Action<string> RoadModifyTargetDataNameRequested { get; set; }
         public Action RoadSaveTransformRequested { get; set; }
@@ -323,8 +323,8 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
             }
         }
 
-        private readonly List<int> _roadSegmentOptionIndices = new List<int>();
-        private readonly Dictionary<int, string> _roadSegmentNameMap = new Dictionary<int, string>();
+        private readonly List<string> _roadSegmentOptionNames = new List<string>();
+        private readonly Dictionary<string, string> _roadSegmentNameMap = new Dictionary<string, string>();
         private bool _isUpdatingSegmentOptions;
 
         public void SetRoadNoteRange(int begin, int end)
@@ -333,20 +333,20 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
             _roadNoteRangeEndField?.SetValueWithoutNotify(end);
         }
 
-        public void SetRoadSegmentOptions(IReadOnlyList<string> displayNames, IReadOnlyList<int> segmentIndices, int selectedSegmentIndex)
+        public void SetRoadSegmentOptions(IReadOnlyList<string> displayNames, IReadOnlyList<string> segmentNames, string selectedSegmentName)
         {
             if (_roadSegmentNameField == null) return;
             _isUpdatingSegmentOptions = true;
             _roadSegmentNameMap.Clear();
-            _roadSegmentOptionIndices.Clear();
+            _roadSegmentOptionNames.Clear();
 
-            if (displayNames != null && segmentIndices != null)
+            if (displayNames != null && segmentNames != null)
             {
-                int count = Mathf.Min(displayNames.Count, segmentIndices.Count);
+                int count = Mathf.Min(displayNames.Count, segmentNames.Count);
                 for (int i = 0; i < count; i++)
                 {
-                    _roadSegmentOptionIndices.Add(segmentIndices[i]);
-                    _roadSegmentNameMap[segmentIndices[i]] = displayNames[i];
+                    _roadSegmentOptionNames.Add(segmentNames[i]);
+                    _roadSegmentNameMap[segmentNames[i]] = displayNames[i];
                 }
                 _roadSegmentNameField.choices = new List<string>(displayNames);
             }
@@ -355,7 +355,7 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
                 _roadSegmentNameField.choices = new List<string>();
             }
 
-            int targetOptionIndex = _roadSegmentOptionIndices.IndexOf(selectedSegmentIndex);
+            int targetOptionIndex = _roadSegmentOptionNames.IndexOf(selectedSegmentName);
             if (targetOptionIndex >= 0 && targetOptionIndex < _roadSegmentNameField.choices.Count)
             {
                 _roadSegmentNameField.SetValueWithoutNotify(_roadSegmentNameField.choices[targetOptionIndex]);
@@ -374,14 +374,14 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
             _isUpdatingSegmentOptions = false;
         }
 
-        private string GetSegmentDisplayName(int segmentIndex)
+        private string GetSegmentDisplayName(string segmentName)
         {
-            if (_roadSegmentNameMap.TryGetValue(segmentIndex, out var name))
+            if (_roadSegmentNameMap.TryGetValue(segmentName, out var displayName))
             {
-                return name;
+                return displayName;
             }
 
-            return $"{segmentIndex} | Unnamed";
+            return $"{segmentName} | Unnamed";
         }
 
         public void SetRoadTargetDataName(string dataName)
@@ -652,9 +652,10 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
                 {
                     if (_isUpdatingSegmentOptions) return;
                     int selectedIndex = _roadSegmentNameField.index;
-                    if (selectedIndex >= 0 && selectedIndex < _roadSegmentOptionIndices.Count)
+                    if (selectedIndex >= 0 && selectedIndex <
+                        _roadSegmentOptionNames.Count)
                     {
-                        RoadModifyTargetSegmentRequested?.Invoke(_roadSegmentOptionIndices[selectedIndex]);
+                        RoadModifyTargetSegmentRequested?.Invoke(_roadSegmentOptionNames[selectedIndex]);
                     }
                 });
             }
@@ -703,7 +704,7 @@ namespace MusicTogether.DancingBall.EditorTool.UIManager
                     if (element is Label label && i >= 0 && i < _roadListCache.Count)
                     {
                         var road = _roadListCache[i];
-                        label.text = $"{i}. {road.roadName} | {GetSegmentDisplayName(road.targetSegmentIndex)} | Note {road.noteBeginIndex}-{road.noteEndIndex} | Block {road.BlockCount}";
+                        label.text = $"{i}. {road.roadName} | {GetSegmentDisplayName(road.targetSegmentName)} | Note {road.noteBeginIndex}-{road.noteEndIndex} | Block {road.BlockCount}";
                     }
                 };
                 _roadListView.selectionChanged += _ =>

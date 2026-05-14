@@ -124,7 +124,8 @@ namespace MusicTogether.MusicSampling
         /// </summary>
         public void OnSeeked()
         {
-            ResetScroll();
+            if (!IsDraggingTimeline)
+                ResetScroll();
         }
 
         // ── 内部逻辑 ────────────────────────────────────────────────────────

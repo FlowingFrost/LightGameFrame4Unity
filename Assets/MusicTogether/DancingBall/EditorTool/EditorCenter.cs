@@ -270,11 +270,11 @@ namespace MusicTogether.DancingBall.EditorTool
             var template = selectedRoad?.RoadData;
             string baseName = template?.roadName ?? "Road";
             string newName = GetUniqueRoadName(sceneData, $"{baseName}_New");
-            int segmentIndex = template?.targetSegmentIndex ?? 0;
+            string segmentName = template?.targetSegmentName ?? "";
             int noteBegin = template?.noteBeginIndex ?? 0;
             int noteEnd = template?.noteEndIndex ?? noteBegin;
 
-            var created = sceneData.CreateRoadData(newName, segmentIndex, noteBegin, noteEnd);
+            var created = sceneData.CreateRoadData(newName, segmentName, noteBegin, noteEnd);
             if (created == null) return false;
             if (template != null)
             {
@@ -289,12 +289,12 @@ namespace MusicTogether.DancingBall.EditorTool
             return true;
         }
 
-        public bool CreateRoad(string roadName, int segmentIndex, int noteBegin, int noteEnd)
+        public bool CreateRoad(string roadName, string segmentName, int noteBegin, int noteEnd)
         {
             if (targetMap?.SceneData == null) return false;
             var sceneData = targetMap.SceneData;
             var finalName = GetUniqueRoadName(sceneData, roadName);
-            var created = sceneData.CreateRoadData(finalName, segmentIndex, noteBegin, noteEnd);
+            var created = sceneData.CreateRoadData(finalName, segmentName, noteBegin, noteEnd);
             if (created == null) return false;
             targetMap.RecoverRoads();
             RefreshSelection();
@@ -308,7 +308,7 @@ namespace MusicTogether.DancingBall.EditorTool
             var sceneData = targetMap.SceneData;
             var template = selectedRoad.RoadData;
             string newName = GetUniqueRoadName(sceneData, $"{template.roadName}_Copy");
-            var created = sceneData.CreateRoadData(newName, template.targetSegmentIndex, template.noteBeginIndex, template.noteEndIndex);
+            var created = sceneData.CreateRoadData(newName, template.targetSegmentName, template.noteBeginIndex, template.noteEndIndex);
             if (created == null) return false;
 
             created.loaclPosition = template.loaclPosition;
@@ -462,7 +462,7 @@ namespace MusicTogether.DancingBall.EditorTool
 
             int noteID = selectedRoad.RoadData.noteBeginIndex + selectedBlock.BlockLocalIndex;
             int originalEndIndex = selectedRoad.RoadData.noteEndIndex;
-            int segmentIndex = selectedRoad.RoadData.targetSegmentIndex;
+            string segmentName = selectedRoad.RoadData.targetSegmentName;
             string originalRoadName = selectedRoad.RoadData.roadName;
             Vector3 scale = selectedRoad.RoadData.localScale;
 
@@ -488,7 +488,7 @@ namespace MusicTogether.DancingBall.EditorTool
             var sceneData = targetMap.SceneData;
             string suffix = canTruncate ? "_Split" : "_Next";
             string newName = GetUniqueRoadName(sceneData, $"{originalRoadName}{suffix}");
-            var newRoadData = sceneData.CreateRoadData(newName, segmentIndex, newNoteBegin, newNoteEnd);
+            var newRoadData = sceneData.CreateRoadData(newName, segmentName, newNoteBegin, newNoteEnd);
             if (newRoadData == null) return false;
 
             newRoadData.loaclPosition = newPos;
@@ -514,11 +514,11 @@ namespace MusicTogether.DancingBall.EditorTool
 
             var sceneData = targetMap.SceneData;
             var template = selectedRoad.RoadData;
-            int segmentIndex = template.targetSegmentIndex;
+            string segmentName = template.targetSegmentName;
             int noteBegin = template.noteEndIndex;
             string newName = GetUniqueRoadName(sceneData, $"{template.roadName}_Next");
 
-            var created = sceneData.CreateRoadData(newName, segmentIndex, noteBegin, noteBegin);
+            var created = sceneData.CreateRoadData(newName, segmentName, noteBegin, noteBegin);
             if (created == null) return false;
 
             created.localScale = template.localScale;
