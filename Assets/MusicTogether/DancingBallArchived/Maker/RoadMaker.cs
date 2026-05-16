@@ -142,7 +142,7 @@ namespace MusicTogether.DancingBallArchived.Maker
         //Pre-Playing Function
         public void GetTimeInformation()
         {
-            float blockAdvanceTime = mapHolder.blockPrefabs[blockPrefabIndex].GetComponentInChildren<Block>().animation.GetMaxTimeRange().startTime;
+            //float blockAdvanceTime = mapHolder.blockPrefabs[blockPrefabIndex].GetComponentInChildren<Block>().animation.GetMaxTimeRange().startTime;
             float tapAdvanceTime =
                 mapHolder.tapPrefabs[roadHolder.tapPrefabIndex].GetComponent<Tap>().timeRange.startTime;
             foreach (var blockHolder in BlockHolders)

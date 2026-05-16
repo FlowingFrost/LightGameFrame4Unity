@@ -1,4 +1,4 @@
-using MusicTogether.LiteAnimation;
+//using MusicTogether.LiteAnimation;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -10,8 +10,8 @@ namespace MusicTogether.DancingBallArchived.Map
         public Transform anchor;
         public Transform downNode,forwardNode,backNode;
         //public Transform upNode, leftNode, rightNode;
-        [Title("Data")] 
-        public AnimationManager animation;
+        //[Title("Data")] 
+        //public AnimationManager animation;
         void Awake()
         {
         }
