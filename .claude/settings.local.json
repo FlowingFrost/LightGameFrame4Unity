@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /mnt/e/UnityProjects/MusicTogether-Template -path \"*/Library/ScriptAssemblies/UnityEditor.dll\" 2>/dev/null; find /mnt/e/UnityHub -name \"UnityEditor.dll\" -path \"*/Managed/*\" 2>/dev/null | head -3; which unity 2>/dev/null)",
+      "Read(//mnt/e/**)"
+    ]
+  }
+}
