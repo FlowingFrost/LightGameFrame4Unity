@@ -2,7 +2,6 @@
     <Style src="project://database/Assets/Plugins/ProjectRecovery/Editor/RecoveryWindow.uss?fileID=7433441132597879392&amp;guid=37bde35b76c2ecc4fa7df571364e5193&amp;type=3#RecoveryWindow" />
     <ui:ScrollView name="root-scroll" class="root-scroll">
         <ui:VisualElement name="root" class="root">
-            <!-- 正常界面 -->
             <ui:VisualElement name="panel-normal" class="panel">
                 <ui:VisualElement name="header-normal" class="header">
                     <ui:Label name="title-normal" text="欢迎使用 MusicTogether" class="title" />
@@ -11,12 +10,11 @@
                     <ui:Label name="description-normal" text="MusicTogether 是一款多人音乐游戏。&#10;如果遇到项目问题，可使用下方工具进行检测。" class="description" />
                     <ui:VisualElement name="button-group-normal" class="button-group">
                         <ui:Button name="btn-check" text="检查项目状态" class="btn btn-primary" />
-                        <ui:Button name="btn-dismiss-normal" text="关闭" class="btn btn-secondary" />
+                        <ui:Button name="btn-dismiss-normal" text="不再显示" class="btn btn-secondary" />
                     </ui:VisualElement>
-                    <ui:Label name="check-result" text="" class="error-detail" />
+                    <ui:Label name="check-result" class="error-detail" />
                 </ui:VisualElement>
             </ui:VisualElement>
-            <!-- 错误界面 -->
             <ui:VisualElement name="panel-error" class="panel" style="display: none;">
                 <ui:VisualElement name="header-error" class="header">
                     <ui:Label name="title-error" text="⚠ 项目编译未通过" class="title title-warning" />
@@ -25,7 +23,7 @@
                     <ui:Label name="description-error" text="项目当前存在编译错误，部分编辑器功能不可用。&#10;请先修复编译错误，或使用下方按钮查看错误详情。" class="description" />
                     <ui:VisualElement name="button-group-error" class="button-group">
                         <ui:Button name="btn-analyze" text="分析错误信息" class="btn btn-primary" />
-                        <ui:Button name="btn-dismiss-error" text="停止显示该窗口" class="btn btn-secondary" />
+                        <ui:Button name="btn-dismiss-error" text="不再显示" class="btn btn-secondary" />
                     </ui:VisualElement>
                     <ui:Label name="error-detail" text="[ 待分析 ]" class="error-detail" />
                 </ui:VisualElement>

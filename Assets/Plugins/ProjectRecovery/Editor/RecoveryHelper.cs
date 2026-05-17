@@ -13,86 +13,106 @@ namespace ProjectRecovery
     public static class RecoveryHelper
     {
         private const string MenuPath = "Tools/Project Recovery";
-        private const string SuppressKey = "ProjectRecovery_Suppress";
+        private const string EnableMenuPath = "Tools/Project Recovery/启用自动弹窗";
+        private const string ShownKey = "ProjectRecovery_ShownThisCycle";
 
-        private static string _pendingErrors;
-        private static string _currentErrors;
-        private static bool _waiting;
+        private static string SettingsFilePath =>
+            Path.Combine(GetProjectRoot(), "Assets/Plugins/ProjectRecovery/Editor/.settings");
 
-        private static bool _initialized;
+        private static string ReadSetting()
+        {
+            try { return File.Exists(SettingsFilePath) ? File.ReadAllText(SettingsFilePath).Trim() : ""; }
+            catch { return ""; }
+        }
+
+        private static readonly List<string> _errorMessages = new List<string>();
 
         static RecoveryHelper()
         {
             CompilationPipeline.assemblyCompilationFinished += OnAssemblyCompiled;
-            EditorApplication.update += WaitForEditorReady;
+            CompilationPipeline.compilationFinished += OnCompilationFinished;
+            EditorApplication.delayCall += Init;
         }
 
-        private static void WaitForEditorReady()
+        private static void Init()
         {
             if (EditorApplication.isCompiling || EditorApplication.isUpdating)
+            {
+                EditorApplication.delayCall += Init;
                 return;
+            }
 
-            EditorApplication.update -= WaitForEditorReady;
-            if (_initialized) return;
-            _initialized = true;
+            string setting = ReadSetting();
 
-            bool suppress = SessionState.GetBool(SuppressKey, false);
-            Debug.Log($"[ProjectRecovery] WaitForEditorReady: suppress={suppress}");
-            if (!suppress)
+            if (EditorUtility.scriptCompilationFailed)
+            {
+                if (setting == "error" || setting == "all") return;
+                if (!SessionState.GetBool(ShownKey, false))
+                {
+                    SessionState.SetBool(ShownKey, true);
+                    ShowWindow();
+                }
+            }
+            else
+            {
+                if (setting == "normal" || setting == "all") return;
                 ShowWindow();
+            }
         }
 
         private static void OnAssemblyCompiled(string assemblyPath, CompilerMessage[] messages)
         {
-            if (SessionState.GetBool(SuppressKey, false))
-                return;
-
             foreach (var msg in messages)
             {
                 if (msg.type == CompilerMessageType.Error)
                 {
-                    _pendingErrors = FormatErrors(messages);
-                    if (!_waiting)
-                    {
-                        _waiting = true;
-                        EditorApplication.update += WaitForIdle;
-                    }
-                    return;
+                    var sb = new StringBuilder();
+                    sb.AppendLine(msg.message);
+                    if (!string.IsNullOrEmpty(msg.file))
+                        sb.AppendLine($"    文件: {msg.file} (行 {msg.line})");
+                    _errorMessages.Add(sb.ToString());
                 }
             }
-
         }
 
-        private static void WaitForIdle()
+        private static void OnCompilationFinished(object obj)
         {
-            if (EditorApplication.isCompiling)
-                return;
-
-            EditorApplication.update -= WaitForIdle;
-            _waiting = false;
-
-            if (!string.IsNullOrEmpty(_pendingErrors))
+            string setting = ReadSetting();
+            if (setting == "error" || setting == "all")
             {
-                string errors = _pendingErrors;
-                _pendingErrors = null;
-                _currentErrors = errors;
-                ShowErrorPanel(errors);
+                _errorMessages.Clear();
+                return;
+            }
+
+            if (EditorUtility.scriptCompilationFailed)
+            {
+                SessionState.SetBool(ShownKey, true);
+                var window = FindExistingWindow();
+                if (window != null)
+                {
+                    window.ShowError();
+                    window.Focus();
+                }
+                else
+                {
+                    ShowWindow();
+                }
+            }
+            else
+            {
+                _errorMessages.Clear();
+                var window = FindExistingWindow();
+                if (window != null) window.ShowNormal();
             }
         }
 
-        private static string FormatErrors(CompilerMessage[] messages)
+        // ========== 错误收集 ==========
+
+        internal static string CollectErrors()
         {
             var sb = new StringBuilder();
-            int i = 0;
-            foreach (var msg in messages)
-            {
-                if (msg.type != CompilerMessageType.Error) continue;
-                i++;
-                sb.AppendLine($"[{i}] {msg.message}");
-                if (!string.IsNullOrEmpty(msg.file))
-                    sb.AppendLine($"    文件: {msg.file} (行 {msg.line})");
-                sb.AppendLine();
-            }
+            for (int i = 0; i < _errorMessages.Count; i++)
+                sb.AppendLine($"[{i + 1}] {_errorMessages[i]}");
             return sb.ToString();
         }
 
@@ -101,7 +121,6 @@ namespace ProjectRecovery
         [MenuItem(MenuPath)]
         public static void ShowWindow()
         {
-            Debug.Log("[ProjectRecovery] ShowWindow called");
             var existing = FindExistingWindow();
             if (existing != null)
             {
@@ -113,19 +132,15 @@ namespace ProjectRecovery
             var window = EditorWindow.CreateWindow<RecoveryHelperWindow>(typeof(SceneView));
             window.titleContent = new GUIContent("Project Recovery");
             window.Show();
+            TryMaximize(window, 0);
         }
 
-        private static void ShowErrorPanel(string errors)
+        [MenuItem(EnableMenuPath)]
+        public static void EnableAutoShow()
         {
-            var window = FindExistingWindow();
-            if (window == null)
-            {
-                ShowWindow();
-                window = FindExistingWindow();
-            }
-            window?.ShowError(errors);
-            window?.Focus();
-            TryMaximize(window, 0);
+            if (File.Exists(SettingsFilePath))
+                File.Delete(SettingsFilePath);
+            Debug.Log("[ProjectRecovery] 已启用自动弹窗");
         }
 
         private static RecoveryHelperWindow FindExistingWindow()
@@ -300,14 +315,7 @@ namespace ProjectRecovery
                     "Assets/Plugins/ProjectRecovery/Editor/RecoveryWindow.uxml");
                 if (uxml == null)
                 {
-                    EditorApplication.delayCall += () =>
-                    {
-                        if (this != null)
-                        {
-                            Close();
-                            ShowWindow();
-                        }
-                    };
+                    Debug.LogError("[ProjectRecovery] 无法加载 RecoveryWindow.uxml");
                     return;
                 }
                 uxml.CloneTree(rootVisualElement);
@@ -326,32 +334,26 @@ namespace ProjectRecovery
                 var btnAnalyze = rootVisualElement.Q<Button>("btn-analyze");
                 var btnDismissError = rootVisualElement.Q<Button>("btn-dismiss-error");
                 if (btnCheck != null) btnCheck.clicked += OnCheck;
-                if (btnDismissNormal != null) btnDismissNormal.clicked += OnDismiss;
+                if (btnDismissNormal != null) btnDismissNormal.clicked += OnDismissNormal;
                 if (btnAnalyze != null) btnAnalyze.clicked += OnAnalyze;
-                if (btnDismissError != null) btnDismissError.clicked += OnDismiss;
+                if (btnDismissError != null) btnDismissError.clicked += OnDismissError;
 
-                Debug.Log($"[ProjectRecovery] CreateGUI: scriptCompilationFailed={EditorUtility.scriptCompilationFailed}");
                 if (EditorUtility.scriptCompilationFailed)
-                    ShowError(_currentErrors ?? "");
+                    ShowError();
                 else
                     ShowNormal();
-
-                TryMaximize(this, 0);
             }
 
-            private void ShowNormal()
+            public void ShowNormal()
             {
-                Debug.Log("[ProjectRecovery] ShowNormal");
                 if (_panelNormal != null) _panelNormal.style.display = DisplayStyle.Flex;
                 if (_panelError != null) _panelError.style.display = DisplayStyle.None;
             }
 
-            public void ShowError(string errors)
+            public void ShowError()
             {
-                Debug.Log($"[ProjectRecovery] ShowError called, errors='{errors}'");
                 if (_panelNormal != null) _panelNormal.style.display = DisplayStyle.None;
                 if (_panelError != null) _panelError.style.display = DisplayStyle.Flex;
-
                 if (_errorDetail != null) _errorDetail.text = "[ 待分析 ]";
             }
 
@@ -364,7 +366,7 @@ namespace ProjectRecovery
             private void OnAnalyze()
             {
                 var sb = new StringBuilder();
-                string errors = _currentErrors ?? "";
+                string errors = CollectErrors();
                 if (!string.IsNullOrEmpty(errors))
                 {
                     sb.AppendLine("=== 编译错误 ===");
@@ -374,9 +376,15 @@ namespace ProjectRecovery
                 if (_errorDetail != null) _errorDetail.text = sb.ToString();
             }
 
-            private void OnDismiss()
+            private void OnDismissNormal()
             {
-                SessionState.SetBool(SuppressKey, true);
+                File.WriteAllText(SettingsFilePath, "normal");
+                Close();
+            }
+
+            private void OnDismissError()
+            {
+                File.WriteAllText(SettingsFilePath, "error");
                 Close();
             }
         }
