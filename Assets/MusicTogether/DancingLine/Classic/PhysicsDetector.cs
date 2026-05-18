@@ -4,6 +4,7 @@ using MusicTogether.DancingLine.Interfaces;
 using UnityEngine;
 using UnityEngine.Events;
 using LightGameFrame.Services;
+using Sirenix.OdinInspector;
 using UnityEngine.Serialization;
 
 namespace MusicTogether.DancingLine.Classic
@@ -30,7 +31,7 @@ namespace MusicTogether.DancingLine.Classic
         {
             get
             {
-                if (lineHeadColliderCache != lineHeadCollider || downRayOriginDisplacementCache == null)
+                if (lineHeadColliderCache != lineHeadCollider || downRayOriginDisplacementCache == null || downRayOriginDisplacementCache.Length != 4)
                 {
                     lineHeadColliderCache = lineHeadCollider;
                     Vector3 colliderSize = lineHeadCollider.size;
@@ -50,7 +51,7 @@ namespace MusicTogether.DancingLine.Classic
         {
             get
             {
-                if (lineHeadColliderCache != lineHeadCollider || topRayOriginDisplacementCache == null)
+                if (lineHeadColliderCache != lineHeadCollider || topRayOriginDisplacementCache == null || topRayOriginDisplacementCache.Length != 4)
                 {
                     lineHeadColliderCache = lineHeadCollider;
                     Vector3 colliderSize = lineHeadCollider.size;

@@ -182,13 +182,10 @@ namespace MusicTogether.DancingLine.Classic
                 if (currentNodeIndex > insertIndex) { currentNodeIndex = insertIndex; }//指针移动到第一个未更新的节点
             }
         }
-        
-        //时间正常流动时，更新和管理节点。
-        public MotionState UpdatePool(double time)
+
+        //管理节点
+        protected ILineNode UpdatePoolSequence(double time)
         {
-            MotionState currentMotion = null;
-            //if (isEmpty) { Init(); }
-            
             if (hasPendingNodes) { ProcessPendingNodes(time); }
             
             if (currentNodeIndex >= lineNodes.Count) currentNodeIndex = lineNodes.Count - 1;
@@ -221,8 +218,9 @@ namespace MusicTogether.DancingLine.Classic
                 //b.正常更新节点.
                 else if (currentNodeIndex == lineNodes.Count - 1)//已经抵达末尾，更新位置并退出循环
                 {
-                    currentMotion = currentNode.UpdatePosition(time);
-                    break;
+                    //currentMotion = currentNode.UpdatePosition(time);
+                    //break;
+                    return currentNode;
                 }
                 else if (lineNodes[currentNodeIndex + 1].BeginTime <= time)//已到达下一节点，更新当前节点位置并修正下一节点起始信息。
                 {
@@ -232,10 +230,11 @@ namespace MusicTogether.DancingLine.Classic
                 //c.下一个节点超前，回收
                 else//回收完毕后变成末尾，更新位置并退出循环
                 {
-                    currentMotion = currentNode.UpdatePosition(time);
                     pendingNodes.AddRange( lineNodes.GetRange(currentNodeIndex + 1, lineNodes.Count - currentNodeIndex - 1));
                     lineNodes.RemoveRange(currentNodeIndex + 1, lineNodes.Count - currentNodeIndex - 1);
-                    break;
+                    //currentMotion = currentNode.UpdatePosition(time);
+                    //break;
+                    return currentNode;
                 }
             }
             
@@ -250,8 +249,18 @@ namespace MusicTogether.DancingLine.Classic
             //if (currentIndex == lineNodes.Count - 1 || lineNodes[currentIndex + 1].BeginTime > time)
             
             //if (currentNode == null) { return new MotionState(){Position = beginPoint, Rotation = Quaternion.identity}; }
-
-            debugText.text = debugInfo;
+            throw new InvalidOperationException("UpdatePoolSequence should always return a valid node. Please check the implementation for potential issues.");
+        }
+        
+        //时间正常流动时，更新和。
+        public MotionState UpdatePool(double time)
+        {
+            //MotionState currentMotion = null;
+            //if (isEmpty) { Init(); }
+            var currentNode = UpdatePoolSequence(time);
+            var currentMotion = currentNode.UpdatePosition(time);
+            
+            if(debugText != null) debugText.text = debugInfo;
             
             //return currentNode.UpdatePosition(time);
             currentMotionState = currentMotion;
@@ -298,6 +307,11 @@ namespace MusicTogether.DancingLine.Classic
         public void UpdateUnion(double currentTime)
         {
             UpdatePool(currentTime);
+        }
+
+        public void EditorPreviewUpdate(double time)
+        {
+            // TODO: 实现编辑器预览更新逻辑
         }
     }
 }

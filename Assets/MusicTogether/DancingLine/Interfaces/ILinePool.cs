@@ -29,5 +29,6 @@ namespace MusicTogether.DancingLine.Interfaces
         //void GetPosition(double time, out Vector3 position, out Vector3 velocity);
         void Init(ILineComponent lineComponent,double time);
         MotionState UpdatePool(double time);
+        void EditorPreviewUpdate(double time);
     }
 }

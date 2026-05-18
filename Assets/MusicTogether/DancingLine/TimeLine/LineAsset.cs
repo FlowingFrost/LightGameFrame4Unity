@@ -1,4 +1,5 @@
 using MusicTogether.DancingLine.Interfaces;
+using MusicTogether.LevelManagement;
 using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Timeline;
@@ -19,6 +20,7 @@ namespace MusicTogether.DancingLine.TimeLine
         [HideInInspector] public double clipEnd;
         [HideInInspector] public ILineComponent component;
         [HideInInspector] public ILineController controller;
+        [HideInInspector] public ILevelManager levelManager;
         
         public override Playable CreatePlayable(PlayableGraph graph, GameObject owner)
         {
@@ -38,6 +40,7 @@ namespace MusicTogether.DancingLine.TimeLine
             behaviour.blendCurve = blendCurve;
             behaviour.component = component;
             behaviour.lineController = controller;
+            behaviour.levelManager = levelManager;
             
             return playable;
         }

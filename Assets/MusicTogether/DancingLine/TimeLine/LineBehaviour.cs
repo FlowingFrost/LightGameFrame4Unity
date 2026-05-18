@@ -1,4 +1,5 @@
 using MusicTogether.DancingLine.Interfaces;
+using MusicTogether.LevelManagement;
 using UnityEngine;
 using UnityEngine.Playables;
 
@@ -9,6 +10,7 @@ namespace MusicTogether.DancingLine.TimeLine
         public ILineComponent component;
         public ILineController lineController;
         public ILinePool linePool;
+        public ILevelManager levelManager;
         public double clipStart;
         public double clipEnd;
         public AnimationCurve blendCurve;
@@ -47,10 +49,16 @@ namespace MusicTogether.DancingLine.TimeLine
             // 计算当前绝对时间（Clip 内相对时间 + Clip 起始时间）
             double localTime = playable.GetTime();
             double globalTime = localTime + clipStart;
-            
-            // 更新 Pool 并获取当前的 MotionState
-            linePool.UpdateUnion(globalTime);
-            CurrentMotionState = linePool.UpdatePool(globalTime);
+
+            if (levelManager != null && levelManager.IsEditorPreviewing)
+            {
+                linePool.EditorPreviewUpdate(globalTime);
+            }
+            else
+            {
+                linePool.UpdateUnion(globalTime);
+                CurrentMotionState = linePool.UpdatePool(globalTime);
+            }
         }
         
         public override void OnBehaviourPause(Playable playable, FrameData info)

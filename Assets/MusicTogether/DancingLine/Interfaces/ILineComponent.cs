@@ -16,11 +16,11 @@ namespace MusicTogether.DancingLine.Interfaces
         //bool GetDirectionByID(int targetID, out IDirection direction);
         //bool SetCurrentDirection(int targetID);
         //void Move();
-        //void Turn();
+      
         //void Turn(int? newDirectionID);//([CanBeNull] IDirection direction);
         //void OnGroundedChanged(bool grounded, Vector3 groundPoint);
         //void SetCurrentMotionType(MotionType motionType);
-        //void OnGravityChanged(Vector3 newGravity);
+        //void OnGravityChanged(Vector3 newGravity);  //void Turn();
         //void ClearNodesAfterNow();
         
         /// <summary>

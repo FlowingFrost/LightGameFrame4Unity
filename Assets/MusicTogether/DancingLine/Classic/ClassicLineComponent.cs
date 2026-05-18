@@ -69,7 +69,7 @@ namespace MusicTogether.DancingLine.Classic
             if (motionState == null)
             {
                 debugInfo += $"[{LevelState}] UpdatePosition: Received null MotionState at time {time}\n";
-                debugText.text = debugInfo;
+                if(debugText != null) debugText.text = debugInfo;
                 return;
             }
             
@@ -77,7 +77,7 @@ namespace MusicTogether.DancingLine.Classic
             lineHeadTransform.rotation = motionState.WorldSpaceRotation;
             
             debugInfo += $"[{LevelState}] UpdatePosition: Pos={motionState.ParentSpacePosition}, Rot={motionState.ParentSpaceRotation.eulerAngles} at time {time}\n";
-            debugText.text = debugInfo;
+            if(debugText != null) debugText.text = debugInfo;
         }
         
         //生命周期

@@ -1,4 +1,5 @@
 using MusicTogether.DancingLine.Interfaces;
+using MusicTogether.LevelManagement;
 using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Timeline;
@@ -47,6 +48,7 @@ namespace MusicTogether.DancingLine.TimeLine
             if (mixerBehaviour.cachedLineComponent != null)
             {
                 var controller = mixerBehaviour.cachedLineComponent.Controller;
+                var levelManager = director.GetComponent<ILevelManager>();
                 foreach (var clip in GetClips())
                 {
                     var lineAsset = clip.asset as LineAsset;
@@ -56,6 +58,7 @@ namespace MusicTogether.DancingLine.TimeLine
                         lineAsset.clipEnd = clip.end;
                         lineAsset.component = mixerBehaviour.cachedLineComponent;
                         lineAsset.controller = controller;
+                        lineAsset.levelManager = levelManager;
                     }
                 }
             }
