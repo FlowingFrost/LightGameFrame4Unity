@@ -1,10 +1,9 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using MusicTogether.DancingBall.Player;
 using UnityEngine;
 
-namespace MusicTogether.DancingBall.Scene
+namespace MusicTogether.DancingBall.SceneOld
 {
     public class ClassicTileHolder : MonoBehaviour, ITileHolder
     {

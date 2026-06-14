@@ -1,6 +1,6 @@
 using System.Collections.Generic;
-using MusicTogether.DancingBall.Scene;
 using MusicTogether.DancingBall.SceneElements;
+using MusicTogether.DancingBall.SceneOld;
 using MusicTogether.LevelManagement;
 using Sirenix.OdinInspector;
 using UnityEngine;

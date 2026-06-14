@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using MusicTogether.DancingBall.Data;
 using MusicTogether.DancingBall.EditorTool.UIManager;
-using MusicTogether.DancingBall.Scene;
+using MusicTogether.DancingBall.SceneOld;
 using UnityEngine;
 using UnityEngine.UIElements;
 

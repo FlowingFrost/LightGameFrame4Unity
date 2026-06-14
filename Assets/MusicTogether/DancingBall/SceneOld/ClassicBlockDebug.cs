@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace MusicTogether.DancingBall.Scene
+namespace MusicTogether.DancingBall.SceneOld
 {
     public class ClassicBlockDebug : MonoBehaviour, IBlockDebug
     {

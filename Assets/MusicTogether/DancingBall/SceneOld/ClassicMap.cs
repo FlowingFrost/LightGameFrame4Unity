@@ -2,12 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using MusicTogether.DancingBall.Data;
-using MusicTogether.DancingBall.EditorTool;
 using MusicTogether.DancingBall.Player;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
-namespace MusicTogether.DancingBall.Scene
+namespace MusicTogether.DancingBall.SceneOld
 {
     public class ClassicMap : SerializedMonoBehaviour, IMap
     {

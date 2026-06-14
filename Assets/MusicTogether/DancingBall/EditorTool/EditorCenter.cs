@@ -4,7 +4,7 @@ using LightGameFrame.Services;
 using MusicTogether.DancingBall.EditorTool.Controller;
 using MusicTogether.DancingBall.Data;
 using MusicTogether.DancingBall.Player;
-using MusicTogether.DancingBall.Scene;
+using MusicTogether.DancingBall.SceneOld;
 using UnityEngine;
 
 namespace MusicTogether.DancingBall.EditorTool

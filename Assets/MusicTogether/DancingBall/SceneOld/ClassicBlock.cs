@@ -1,11 +1,9 @@
 using System;
-using System.Collections.Generic;
 using MusicTogether.DancingBall.Data;
-using MusicTogether.DancingBall.Player;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
-namespace MusicTogether.DancingBall.Scene
+namespace MusicTogether.DancingBall.SceneOld
 {
     public class ClassicBlock : SerializedMonoBehaviour, IBlock
     {
