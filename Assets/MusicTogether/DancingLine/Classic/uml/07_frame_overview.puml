@@ -1,0 +1,68 @@
+@startuml
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 6
+skinparam maxmessagesize 160
+skinparam ParticipantPadding 55
+skinparam BoxPadding 12
+
+title 完整帧生命周期 — 时间驱动链 + 输入驱动链
+
+participant "Timeline\n(驱动源)" as TL
+participant "ClassicLineComponent\nILineComponent" as Comp
+participant "ClassicLinePool\nILinePool" as Pool
+participant "ClassicLineNode\nILineNode" as Node
+participant "ClassicLineTail\nILineTail" as Tail
+participant "ClassicDirection\nIDirection" as Dir
+participant "ClassicLineController\nILineController" as Ctrl
+
+== 时间驱动链 (每帧) ==
+
+TL -> Comp: 驱动
+Comp -> Pool: UpdatePool(time)
+activate Pool
+
+Pool -> Pool: ProcessPendingNodes(time)
+note right: pendingNodes → lineNodes (排序插入)
+
+Pool -> Pool: 回收超前节点 (BeginTime > time)
+note right: lineNodes → pendingNodes
+
+loop 遍历 lineNodes
+    Pool -> Node: UpdatePosition(time)
+    activate Node
+    Node -> Tail: UpdateTail(beginPos, deltaTime, direction)
+    Tail -> Dir: UpdatePosition(startPoint, time, tailTransform)
+    Dir --> Tail: MotionState (匀速直线运动)
+    Tail --> Node: MotionState
+
+    Node -> Node: switch (NodeMotionType)\n  Grounded → IsGrounded\n  Falling → GetLandingPoint\n  FallingToGrounded → IsGrounded
+
+    Node --> Pool: currentMotionState
+    deactivate Node
+end
+
+Pool --> Comp: UpdatePosition(motionState)
+deactivate Pool
+
+Comp -> Comp: lineHeadTransform.position\n  = motionState.WorldSpacePosition\nlineHeadTransform.rotation\n  = motionState.WorldSpaceRotation
+
+== 输入驱动链 (仅 Playing 状态) ==
+
+Ctrl -> Ctrl: Update() 检测鼠标/键盘
+alt Input.GetMouseButtonDown(0) || GetKeyDown(Space)
+    Ctrl -> Ctrl: 过滤 UI 点击 (EventSystem)
+    Ctrl -> Pool: AddNode(NodeInputType.Turn, time)
+    note left of Pool: Instantiate → pendingNodes.Add\n等待下一帧 ProcessPendingNodes 处理
+end
+
+note over Comp, Ctrl
+  **两条驱动链汇合于 Pool:**
+  时间链 (左→右): Timeline → Component → Pool → Node → Tail → Direction
+  输入链 (右→左): Controller → Pool.AddNode → pendingNodes → ProcessPendingNodes
+
+  **坐标约定:** Pool 参考系内, y 轴反方向为 "下"
+  **物理:** 节点通过 RefreshNodeByFormer 继承前节点的位置和物理状态
+end note
+
+@enduml

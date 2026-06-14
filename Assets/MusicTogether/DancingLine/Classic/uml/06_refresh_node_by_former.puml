@@ -1,0 +1,52 @@
+@startuml
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 6
+skinparam maxmessagesize 150
+skinparam ParticipantPadding 50
+skinparam BoxPadding 12
+
+title RefreshNodeByFormer() — 节点间状态继承
+
+participant "ClassicLinePool\nILinePool" as Pool
+participant "formerNode\n(lineNodes[i])" as Former
+participant "targetNode\n(新节点)" as Target
+participant "directions[]\nList<IDirection>" as Dirs
+participant "PhysicsDetector\nIPhysicsDetector" as Phys
+
+-> Pool: RefreshNodeByFormer(targetNode, formerNode)
+activate Pool
+
+note over Pool: targetNode 已通过 AddNode() 创建\n并设置了 NodeType、BeginTime
+
+Pool -> Former: UpdatePosition(targetNode.BeginTime)
+activate Former
+Former --> Pool: beginPosition (前节点在目标时刻的位置)
+deactivate Former
+
+opt formerNode.EndDisplacement != null
+    Pool -> Pool: beginPosition += formerNode.EndDisplacement.Value
+    note right: 叠加上一段的终点位移修正
+end
+
+Pool -> Former: GetPhysicsState(targetNode.BeginTime)
+activate Former
+Former --> Pool: beginPhysicsState\n(Velocity, Gravity, NodeMotionType)
+deactivate Former
+
+alt targetNode.NodeType == Turn
+    Pool -> Dirs: nextDirection(currentNode.Direction)
+    Dirs --> Pool: newDir = directions[current.NextDirectionID]
+else 其他 (Continue / Event)
+    Pool -> Pool: newDir = currentNode.Direction (保持方向)
+end
+
+Pool -> Target: SetDirection(newDir)
+Pool -> Target: SetBeginPosition(beginPosition)
+Pool -> Target: InitMotion(physicsDetector, beginPhysicsState)
+
+note over Target: targetNode 现在已准备好\n可以在 UpdatePosition 中独立计算运动
+
+deactivate Pool
+
+@enduml

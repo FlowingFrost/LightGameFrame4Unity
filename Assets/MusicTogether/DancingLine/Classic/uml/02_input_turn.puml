@@ -1,0 +1,44 @@
+@startuml
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 6
+skinparam maxmessagesize 140
+skinparam ParticipantPadding 50
+skinparam BoxPadding 12
+
+title Controller.Update() — 运行时输入检测与 AddNode
+
+participant "Unity Input\n(鼠标/键盘)" as Input
+participant "ClassicLineController\nILineController" as Ctrl
+participant "ILevelManager\nLevelTime" as LM
+participant "EventSystem\nUI 检测" as ES
+participant "ClassicLinePool\n(activePools[i])" as Pool
+
+loop 每帧 Update()
+    Input -> Ctrl: GetMouseButtonDown(0)\n/ GetKeyDown(Space)
+    activate Ctrl
+
+    Ctrl -> ES: IsPointerOverGameObject()
+    ES --> Ctrl: false (未点击 UI)
+
+    Ctrl -> LM: 读取 LevelTime
+    LM --> Ctrl: time
+
+    note over Ctrl: 维护 activePools / inactivePools 列表\nactivePools = inactivePools\n  .Where(p => p.IsActiveAt(time))
+
+    Ctrl -> Pool: AddNode(NodeInputType.Turn, time)
+    activate Pool
+
+    Pool -> Pool: Instantiate(lineTailPrefab, tailHolder)
+    Pool -> Pool: GetComponent<ILineNode>()
+    Pool -> Pool: newNode.SetNodeType(Turn)
+    Pool -> Pool: newNode.SetBeginTime(time)
+    Pool -> Pool: pendingNodes.Add(newNode)
+
+    deactivate Pool
+    deactivate Ctrl
+end
+
+note over Pool: 稍后在 UpdatePool() 中\nProcessPendingNodes() 将\npendingNodes 排序插入 lineNodes
+
+@enduml

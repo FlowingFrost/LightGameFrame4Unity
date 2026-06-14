@@ -32,23 +32,30 @@ namespace MusicTogether.DancingLine.Classic
         public void SetBeginTime(double newBeginTime) { }
         public void SetEndTime(double newEndTime) { endTime = newEndTime;}
         public void SetBeginPosition(Vector3 newBeginPosition) => endPosition = newBeginPosition;
-
-        public MotionState UpdatePosition(double time)
+        public MotionState GetMotionStateAtTime(double time, bool calculatePhysics = true)
         {
-            //time is negative, so it represents the time before the line head reaches the start point, and the line head is moving towards the start point along the direction vector. The end position is determined by the initial velocity and gravity, and the direction vector determines the movement direction of the line head.
             time = time > endTime ? endTime : time;
             var deltaTime = time - endTime;
             var ms = direction.GetLineHeadMotionState(endPosition, deltaTime);
-            switch (NodeMotionType)
+            if (calculatePhysics)
             {
-                case NodeMotionType.Falling:
-                    ms.ParentSpacePosition += PhysicsHelper.CalculateDisplacement(endVelocity, gravity, (float)deltaTime);
-                    break;
-                case NodeMotionType.GroundedToFalling:
-                    goto case NodeMotionType.Falling;
+                switch (NodeMotionType)
+                {
+                    case NodeMotionType.Falling:
+                        ms.ParentSpacePosition += PhysicsHelper.CalculateDisplacement(endVelocity, gravity, (float)deltaTime);
+                        break;
+                    case NodeMotionType.GroundedToFalling:
+                        goto case NodeMotionType.Falling;
+                }
             }
-            
             ms.SelfTransform = transform;
+            return ms;
+        }
+
+        public MotionState UpdateMotionState(double time)
+        {
+            //time is negative, so it represents the time before the line head reaches the start point, and the line head is moving towards the start point along the direction vector. The end position is determined by the initial velocity and gravity, and the direction vector determines the movement direction of the line head.
+            var ms = GetMotionStateAtTime(time);
             return ms;
         }
 

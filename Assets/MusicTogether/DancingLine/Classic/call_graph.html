@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Classic DancingLine — UML 时序图</title>
+<style>
+  * { margin:0; padding:0; }
+  body { background:#0d1117; font-family:"Segoe UI","Noto Sans SC",sans-serif; color:#c9d1d9; }
+  header { position:sticky; top:0; background:#0d1117ee; backdrop-filter:blur(8px); border-bottom:1px solid #21262d;
+           padding:16px 24px; z-index:10; }
+  header h1 { font-size:20px; }
+  header p { font-size:12px; color:#8b949e; margin-top:4px; }
+  nav { display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; }
+  nav a { color:#58a6ff; text-decoration:none; font-size:11px; padding:3px 10px; border-radius:4px;
+          border:1px solid #30363d; white-space:nowrap; }
+  nav a:hover { background:#1f6feb22; border-color:#58a6ff; }
+  .diagram { margin:32px auto; max-width:1100px; padding:0 20px; }
+  .diagram h2 { font-size:15px; margin-bottom:12px; color:#e6edf3; padding-left:8px; border-left:3px solid #58a6ff; }
+  .diagram .svg-wrap { background:#fff; border-radius:8px; padding:16px; overflow-x:auto; }
+  .diagram .svg-wrap img { display:block; max-width:100%; height:auto; }
+  #top-btn { position:fixed; bottom:20px; right:20px; background:#1f6feb; color:#fff; border:none;
+             border-radius:50%; width:40px; height:40px; cursor:pointer; font-size:18px; opacity:0.7; z-index:10; }
+  #top-btn:hover { opacity:1; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Classic DancingLine — UML 时序图</h1>
+  <p>由 PlantUML 渲染 · 共 7 张图 · 覆盖初始化 / 输入 / 帧更新 / 物理状态机 / 落点预测 / 状态继承 / 帧总览</p>
+  <nav>
+    <a href="#d01">1. 初始化</a>
+    <a href="#d02">2. 输入检测</a>
+    <a href="#d03">3. UpdatePool</a>
+    <a href="#d04">4. UpdatePosition</a>
+    <a href="#d05">5. GetLandingPoint</a>
+    <a href="#d06">6. RefreshNodeByFormer</a>
+    <a href="#d07">7. 帧总览</a>
+  </nav>
+</header>
+
+<main>
+  <div class="diagram" id="d01">
+    <h2>1. Pool.Init() — 初始化流程</h2>
+    <div class="svg-wrap"><img src="uml/out/01_init.svg" alt="初始化流程"></div>
+  </div>
+  <div class="diagram" id="d02">
+    <h2>2. Controller.Update() — 运行时输入检测与 AddNode</h2>
+    <div class="svg-wrap"><img src="uml/out/02_input_turn.svg" alt="输入检测"></div>
+  </div>
+  <div class="diagram" id="d03">
+    <h2>3. Pool.UpdatePool() — 帧更新与节点链表遍历</h2>
+    <div class="svg-wrap"><img src="uml/out/03_update_pool.svg" alt="帧更新"></div>
+  </div>
+  <div class="diagram" id="d04">
+    <h2>4. ClassicLineNode.UpdatePosition() — 物理状态机</h2>
+    <div class="svg-wrap"><img src="uml/out/04_node_update_position.svg" alt="物理状态机"></div>
+  </div>
+  <div class="diagram" id="d05">
+    <h2>5. PhysicsDetector.GetLandingPoint() — 落点预测</h2>
+    <div class="svg-wrap"><img src="uml/out/05_get_landing_point.svg" alt="落点预测"></div>
+  </div>
+  <div class="diagram" id="d06">
+    <h2>6. RefreshNodeByFormer() — 节点间状态继承</h2>
+    <div class="svg-wrap"><img src="uml/out/06_refresh_node_by_former.svg" alt="状态继承"></div>
+  </div>
+  <div class="diagram" id="d07">
+    <h2>7. 完整帧生命周期 — 时间驱动链 + 输入驱动链</h2>
+    <div class="svg-wrap"><img src="uml/out/07_frame_overview.svg" alt="帧总览"></div>
+  </div>
+</main>
+
+<button id="top-btn" onclick="scrollTo(0,0)" title="回到顶部">↑</button>
+</body>
+</html>

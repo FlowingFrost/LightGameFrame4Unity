@@ -13,6 +13,11 @@ namespace MusicTogether.DancingLine.Classic
             gameObject.SetActive(active);
         }
 
+        public MotionState GetMotionStateAtTime(Vector3 beginPosition, double deltaTime, IDirection direction)
+        {
+            return direction.GetLineHeadMotionState(beginPosition, deltaTime);
+        }
+
         public MotionState UpdateTail(Vector3 beginPosition, double deltaTime, IDirection direction)
         {
             return direction.UpdatePosition(beginPosition, deltaTime, lineTailObject.transform);

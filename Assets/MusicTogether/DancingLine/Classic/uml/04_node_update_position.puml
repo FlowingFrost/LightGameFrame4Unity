@@ -1,0 +1,77 @@
+@startuml
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 6
+skinparam maxmessagesize 140
+skinparam ParticipantPadding 50
+skinparam BoxPadding 12
+
+title ClassicLineNode.UpdatePosition() — 物理状态机
+
+participant "ClassicLineNode\nILineNode" as Node
+participant "ClassicLineTail\nILineTail" as Tail
+participant "ClassicDirection\nIDirection" as Dir
+participant "PhysicsDetector\nIPhysicsDetector" as Phys
+participant "PhysicsHelper\n(static)" as PH
+participant "PhysicsState\n(内部缓存)" as State
+
+-> Node: UpdatePosition(time)
+activate Node
+
+Node -> Node: deltaTime = time - beginTime
+
+Node -> Tail: tail.UpdateTail(beginPosition, deltaTime, direction)
+activate Tail
+Tail -> Dir: direction.UpdatePosition(startPoint, time, tailTransform)
+activate Dir
+Dir -> Dir: pos = startPoint + directionVector * time\nrot = LookRotation(directionVector)
+Dir -> Dir: tailTransform.localPosition/rotation/scale 更新
+Dir --> Tail: headMotion (MotionState)
+deactivate Dir
+Tail --> Node: headMotion
+deactivate Tail
+
+== switch (NodeMotionType) 物理状态机 ==
+
+alt case Grounded
+    Node -> Phys: IsGrounded(headMotion, out displacement)
+    alt 离地
+        Node -> State: NodeMotionType = GroundedToFalling
+        Node -> Node: hasLimitedLength = true; endTime = time
+    else 贯穿 (displacement != null)
+        Node -> Node: CachedEndDisplacement = displacement\nendTime = time
+    end
+
+else case Falling
+    Node -> PH: CalculateDisplacement(beginVelocity, gravity, deltaTime)
+    PH --> Node: deltaH
+    Node -> Node: headMotion.ParentSpacePosition += deltaH
+
+    Node -> Phys: GetLandingPoint(cachedMS, physicsState,\ndeltaTime, direction, out result)
+    alt 找到落点
+        Node -> State: NodeMotionType = FallingToGrounded
+        Node -> Node: endTime = time + result.FinalT
+        opt result.Displacement != null
+            Node -> Node: CachedEndDisplacement = result.Displacement
+        end
+    end
+
+else case FallingToGrounded
+    Node -> PH: CalculateDisplacement(beginVelocity, gravity, deltaTime)
+    PH --> Node: deltaH2
+    Node -> Node: headMotion.ParentSpacePosition += deltaH2
+    Node -> Phys: IsGrounded(headMotion, out displacement2, findingMode: true)
+    opt displacement2 != null
+        Node -> Node: endTime = time\nCachedEndDisplacement = displacement2
+    end
+end
+
+alt [!hasInitialized] 首帧初始化
+    Node -> Tail: SetActive(Grounded ? true : false)
+    Node -> Node: hasInitialized = true
+end
+
+Node --> : return headMotion (MotionState)
+deactivate Node
+
+@enduml

@@ -1,0 +1,84 @@
+@startuml
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 6
+skinparam maxmessagesize 150
+skinparam ParticipantPadding 55
+skinparam BoxPadding 12
+
+title Pool.UpdatePool() — 帧更新与双列表管理
+
+participant "ClassicLinePool\nILinePool" as Pool
+participant "pendingNodes\nList<ILineNode>" as Pend
+participant "lineNodes\nList<ILineNode>" as Lines
+participant "currentNode\n(lineNodes[i])" as Cur
+participant "nextNode\n(lineNodes[i+1])" as Nxt
+participant "ClassicLineTail\nILineTail" as Tail
+participant "ClassicDirection\nIDirection" as Dir
+
+-> Pool: UpdatePool(time)
+activate Pool
+
+== ProcessPendingNodes: pendingNodes → lineNodes ==
+
+alt [hasPendingNodes]
+    Pool -> Pend: Sort((a,b) => a.BeginTime - b.BeginTime)
+    loop BeginTime <= time
+        Pool -> Pend: 取出 pendingNodes[0]
+        Pool -> Lines: BinarySearch → 按 BeginTime 有序插入
+        Pool -> Pend: RemoveAt(0)
+        note right of Pool: 若 currentNodeIndex > insertIndex\n指针回退到第一个未更新节点
+    end
+end
+
+== 回收超前节点: lineNodes → pendingNodes ==
+
+loop [currentNode.BeginTime > time]
+    Pool -> Cur: SetActive(false)
+    Pool -> Lines: RemoveAt(currentNodeIndex)
+    Pool -> Pend: Add(currentNode)
+    Pool -> Pool: currentNodeIndex--
+end
+
+== UpdatePoolSequence 主循环 (遍历 lineNodes) ==
+
+loop currentNodeIndex < lineNodes.Count
+    Pool -> Lines: 读取 lineNodes[currentNodeIndex] → currentNode
+
+    alt [a] HasLimitedLength && EndTime <= time
+        Pool -> Pool: ContinueNode(currentNode, index)
+        note right of Pool
+            AddNode(Continue, endTime) 不进入 pending
+            → RefreshNodeByFormer(新节点, currentNode)
+            → lineNodes.Insert(formerIndex+1, 新节点)
+        end note
+        Pool -> Pool: currentNodeIndex++
+
+    else [b] 已抵达末尾 (i == Count-1)
+        Pool -> Cur: UpdatePosition(time)
+        activate Cur
+        Cur -> Tail: UpdateTail(beginPos, deltaTime, direction)
+        Tail -> Dir: UpdatePosition(startPoint, time, tailTransform)
+        Dir --> Tail: headMotion (MotionState)
+        Tail --> Cur: headMotion (叠加物理位移)
+        Cur --> Pool: currentMotionState
+        deactivate Cur
+        note right: return currentMotion
+
+    else [c] 下一节点时间已到 (next.BeginTime <= time)
+        Pool -> Lines: 读取 lineNodes[currentNodeIndex+1] → nextNode
+        Pool -> Nxt: RefreshNodeByFormer(nextNode, currentNode)
+        note right: formerNode → targetNode 状态继承
+        Pool -> Pool: currentNodeIndex++
+
+    else [d] 下一节点超前 (next.BeginTime > time)
+        Pool -> Lines: GetRange(i+1, Count-1-i) → 取出后续全部节点
+        Pool -> Pend: AddRange(取出的节点)
+        Pool -> Lines: RemoveRange(i+1, Count-1-i)
+        note right: 回收后续全部节点到 pending\n返回 currentNode
+    end
+end
+
+deactivate Pool
+
+@enduml

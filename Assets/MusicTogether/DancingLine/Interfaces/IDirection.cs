@@ -2,8 +2,6 @@ using UnityEngine;
 
 namespace MusicTogether.DancingLine.Interfaces
 {
-
-    
     /// <summary>
     /// 方向数据接口
     /// 定义了线条移动的方向信息

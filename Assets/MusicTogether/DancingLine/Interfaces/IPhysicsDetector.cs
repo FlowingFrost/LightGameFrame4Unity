@@ -16,8 +16,3 @@ namespace MusicTogether.DancingLine.Interfaces
             IDirection direction, [CanBeNull] out MotionCalculationResult result, bool verifyResult = true);
     }
 }
-
-//Backup
-//public event Action<bool, Vector3> OnGroundedChanged;
-//public event Action<Transform> OnWallHit;
-//void DetectMotionType(MotionType currentMotionType, Vector3 currentVelocity, Vector3 acceleration);

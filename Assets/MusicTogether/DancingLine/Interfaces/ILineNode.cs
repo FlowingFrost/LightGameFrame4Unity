@@ -20,7 +20,6 @@ namespace MusicTogether.DancingLine.Interfaces
         public PhysicsState InitialPhysicsState { get; }
         public NodeMotionType NodeMotionType { get;}
         
-        //void Init(NodeInputType nodeType, double beginTime, IDirection direction, IPhysicsDetector physicsDetector);
         void InitMotion(IPhysicsDetector physicsDetector, PhysicsState initialPhysicsState);
         
         void SetActive(bool isActive);
@@ -30,10 +29,10 @@ namespace MusicTogether.DancingLine.Interfaces
         void SetEndTime(double newEndTime);//这两个之后需要改成属性访问器
         void SetBeginPosition(Vector3 newBeginPosition);
         
-        MotionState UpdatePosition(double time);
+        MotionState GetMotionStateAtTime(double time, bool calculatePhysics = true);
+        MotionState UpdateMotionState(double time);
         PhysicsState GetPhysicsState(double time);
         
-        //double GetEndTime(Vector3 endPoint);
         void DeleteNode();
     }
 }

@@ -101,16 +101,6 @@ namespace MusicTogether.DancingLine.Classic
             return newNode;
         }
         
-        /*public ILineNode AddNode(NodeInputType nodeType, double time, IDirection direction, PhysicsState physicsState)
-        {
-            var newNodeObj = Instantiate(lineTailPrefab, tailHolder);
-            var newNode = newNodeObj.GetComponent<ILineNode>();
-            newNode.Init(nodeType, time, direction, physicsDetector);
-            newNode.InitMotion(physicsState);
-            pendingNodes.Add(newNode);
-            return newNode;
-        }*/
-        
         internal void RefreshNode(ILineNode targetNode, IDirection direction, Vector3 beginPosition, PhysicsState beginPhysicsState)
         {
             targetNode.SetDirection(direction);
@@ -125,7 +115,7 @@ namespace MusicTogether.DancingLine.Classic
         /// <param name="formerNode"></param>
         internal void RefreshNodeByFormer(ILineNode targetNode, ILineNode formerNode)
         {
-            var beginPosition = formerNode.UpdatePosition(targetNode.BeginTime).ParentSpacePosition;
+            var beginPosition = formerNode.UpdateMotionState(targetNode.BeginTime).ParentSpacePosition;
             if (formerNode.EndDisplacement.HasValue) beginPosition += formerNode.EndDisplacement.Value;
             var beginPhysicsState = formerNode.GetPhysicsState(targetNode.BeginTime);
             
@@ -154,20 +144,6 @@ namespace MusicTogether.DancingLine.Classic
             RefreshNodeByFormer(continuingNode, formerNode);
             lineNodes.Insert(formerIndex+1, continuingNode);
         }
-        
-        /*protected void OnNodeEnd(ILineNode endingNode)
-        {
-            var nodeEndTime = endingNode.EndTime;
-            //if (nodeEndTime > currentTime) return;
-            var endingPhysicsState = endingNode.GetPhysicsState(nodeEndTime);
-
-            //先查找是否存在相同时间节点，若有则更新该节点的输入类型和物理状态，若没有则添加一个新的继续节点。
-            //此处需要添加的节点已经在时间范围内，不再添加到pendingNodes以防止新的错误。同时需要修改AddNode可选参数，即添加位置
-            //AddNode(NodeInputType.Continue, nodeEndTime, endingNode.Direction, endingPhysicsState);
-            
-            debugInfo += $"Node (Time : [{endingNode.BeginTime}, {endingNode.EndTime}) Motion : {endingNode.NodeMotionType}) ended\n";
-        }*/
-        
         protected void ProcessPendingNodes(double time)
         {
             if (!hasPendingNodes) { return; }
@@ -255,14 +231,11 @@ namespace MusicTogether.DancingLine.Classic
         //时间正常流动时，更新和。
         public MotionState UpdatePool(double time)
         {
-            //MotionState currentMotion = null;
-            //if (isEmpty) { Init(); }
             var currentNode = UpdatePoolSequence(time);
-            var currentMotion = currentNode.UpdatePosition(time);
+            var currentMotion = currentNode.UpdateMotionState(time);
             
             if(debugText != null) debugText.text = debugInfo;
             
-            //return currentNode.UpdatePosition(time);
             currentMotionState = currentMotion;
             return currentMotion;
         }

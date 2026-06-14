@@ -29,8 +29,6 @@ namespace MusicTogether.DancingLine.Classic
         public LevelState LevelState => levelManager.CurrentLevelState;
         internal List<PoolRegistration> activePools = new List<PoolRegistration>();
         internal List<PoolRegistration> inactivePools = new List<PoolRegistration>();
-        
-        //[SerializeField] internal TextMeshProUGUI debugText;
         internal string debugInfo;
         
 
@@ -52,8 +50,6 @@ namespace MusicTogether.DancingLine.Classic
                         if (!EventSystem.current.IsPointerOverGameObject())
                         {
                             debugInfo += $"Input detected at time {Time.time}\n Events:";
-                            //debugText.text = debugInfo;
-                            //OnInputDetected?.Invoke();
                             foreach (var poolStruct in activePools)
                             {
                                 poolStruct.Pool.AddNode(NodeInputType.Turn, time);

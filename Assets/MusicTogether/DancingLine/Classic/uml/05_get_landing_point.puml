@@ -1,0 +1,70 @@
+@startuml
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 6
+skinparam maxmessagesize 160
+skinparam ParticipantPadding 50
+skinparam BoxPadding 12
+
+title PhysicsDetector.GetLandingPoint() — 落点预测
+
+participant "PhysicsDetector\nIPhysicsDetector" as Phys
+participant "ClassicDirection\nIDirection" as Dir
+participant "PhysicsHelper\n(static)" as PH
+participant "MotionState\n(cachedMS)" as MS
+participant "MotionCalculationResult\n(out result)" as Res
+
+-> Phys: GetLandingPoint(initialMS, initialPhys, currentMoveTime, direction, out result)
+activate Phys
+
+Phys -> Dir: GetLineHeadMotionState(beginPos, currentMoveTime)
+Dir --> Phys: cachedMS
+Phys -> PH: CalculateDisplacement(v0, g, currentMoveTime)
+PH --> Phys: 位移 → 叠加到 cachedMS.ParentSpacePosition
+
+== BoxColliderRaycast 地面探测 (fromTop:true) ==
+
+Phys -> Phys: 从 BoxCollider 四个顶角向下发射射线
+note right
+    for i in [0..3]:
+      origin = corner[i] + shrink (微调避免贴合)
+      Ray(origin, -worldSpaceUp) → hitInfo
+    取最近碰撞点 → 换算为物体中心位置
+end note
+
+alt [找到地面] landingPoint 有效
+
+    Phys -> MS: WorldPosToObject(landingPoint) → objectSpaceDisplacement
+    Phys -> Phys: h = Dot(objectSpaceUp, objectSpaceDisplacement)\nv0 = Dot(objectSpaceUp, ObjectSpaceVelocity(t))\ng  = Dot(objectSpaceUp, objectSpaceGravity)
+
+    Phys -> Phys: SolveMotionTime(v0, g, h)
+    note right
+        0.5·g·t² + v0·t - h = 0
+        Δ = v0² + 2·g·h
+        result: Δ, T1, T2, FinalT = max(T1, T2)
+    end note
+
+    alt [Δ > 0 && FinalT + currentMoveTime > 0] 验证落点
+        Phys -> Dir: GetLineHeadMotionState(beginPos, totalMoveTime)
+        Dir --> Phys: 预测位置 MotionState
+
+        Phys -> Phys: BoxColliderRaycast(预测位置, groundCheckDistance)
+        alt 地面存在 → 验证通过
+            Phys --> Res: result (Δ, T1, T2, FinalT)\nreturn true
+        else 地面不存在 → 验证失败
+            Phys -> Dir: GetLineHeadMotionState(回到原位置)
+            Phys --> Res: result = null\nreturn false
+        end
+
+    else [Δ ≤ 0 或 无法求解] 特殊情况 2/3/4
+        Phys -> Phys: Project(objectSpaceDisplacement, parentSpaceUp)
+        Phys --> Res: result.Displacement = 上推修正量\nreturn false
+    end
+
+else [未找到地面]
+    Phys --> Res: result = null\nreturn false
+end
+
+deactivate Phys
+
+@enduml

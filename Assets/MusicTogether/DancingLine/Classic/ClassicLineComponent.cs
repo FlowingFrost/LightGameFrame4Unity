@@ -27,43 +27,6 @@ namespace MusicTogether.DancingLine.Classic
         public Transform Transform => lineHeadTransform;
         public ILineController Controller => controller;
         
-        /*public void Turn()
-        {
-            debugInfo += $"[{LevelState.ToString()}] Turn input received at time {time} in state {LevelState}\n";
-            debugText.text = debugInfo;
-            switch (LevelState)
-            {
-                case LevelState.Playing:
-                    pool.AddNode(NodeInputType.Turn, time);
-                    break;
-                case LevelState.Previewing:
-                    levelManager.SetLevelState(LevelState.Playing);
-                    pool.ClearNodesAfterTime(time);
-                    //goto case LevelState.Playing;
-                    pool.AddNode(NodeInputType.Turn, time);
-                    break;
-                default:
-                    break;        
-            }
-        }*/
-        
-        /*public void ClearNodesAfterTime(double? time)
-        {
-            pool.ClearNodesAfterTime(time);
-        }
-
-        public void ClearNodesAfterNow()
-        {
-            pool.ClearNodesAfterTime(time);
-        }*/
-        
-        /*public void Move()
-        {
-            var currentMotion = pool.CurrentMotionState;//UpdatePool(time);
-            lineHeadTransform.position = currentMotion.WorldSpacePosition;
-            lineHeadTransform.rotation = currentMotion.WorldSpaceRotation;
-        }*/
-        
         public void UpdatePosition(MotionState motionState)
         {
             if (motionState == null)
@@ -78,33 +41,6 @@ namespace MusicTogether.DancingLine.Classic
             
             debugInfo += $"[{LevelState}] UpdatePosition: Pos={motionState.ParentSpacePosition}, Rot={motionState.ParentSpaceRotation.eulerAngles} at time {time}\n";
             if(debugText != null) debugText.text = debugInfo;
-        }
-        
-        //生命周期
-        /*public virtual void AwakeUnion()
-        {
-            // 先取消订阅，防止重复订阅
-            controller.OnInputDetected -= Turn;
-            controller.OnInputDetected += Turn;
-            //levelManager.OnLevelStateChanged += OnLevelStateChanged;
-        }
-
-        public void StartUnion(double startTime = 0d)
-        {
-            cachedBeginTime = startTime;
-            //var currentMotion = pool.Init();
-            //transform.localPosition = currentMotion.Position;
-            //lineHeadTransform.localRotation = currentMotion.Rotation;
-        }
-
-        public virtual void UpdateUnion(double currentTime)
-        {
-            Move();
-        }*/
-
-        private void Update()
-        {
-            //Move();
         }
     }
 }

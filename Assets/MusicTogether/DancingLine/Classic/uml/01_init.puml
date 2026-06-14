@@ -1,0 +1,38 @@
+@startuml
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 6
+skinparam maxmessagesize 120
+skinparam ParticipantPadding 40
+skinparam BoxPadding 12
+
+title Pool.Init() — 初始化流程
+
+participant "Timeline\n(外部驱动)" as TL
+participant "ClassicLineComponent\nILineComponent" as Comp
+participant "ClassicLinePool\nILinePool" as Pool
+participant "PreLineNode\nILineNode" as Pre
+participant "ClassicDirection\ndirections[0]" as Dir
+
+TL -> Comp: Init(lineComponent, time)
+Comp -> Pool: pool.Init(this, LevelTime)
+
+activate Pool
+
+Pool -> Pre: SetEndTime(beginTime)
+Pool -> Pre: SetBeginPosition(beginPoint)
+Pool -> Pre: SetDirection(directions[0])
+Pool -> Pre: InitMotion(physicsDetector, physicsState)\n(传入 PhysicsState: MotionType/Velocity/Gravity)
+
+alt [getLinePositionAsBeginPosition]
+    Pool -> Comp: 读取 Transform.position
+    Pool -> Dir: GetLineHeadMotionState(beginPoint, beginTime - time)
+    note right: 将全局坐标转换到 Pool 本地参考系
+end
+
+note over Pre: preNode 是上一 Pool 终态的虚拟节点\n覆盖负时间范围 (BeginTime = double.MinValue)\n保证跨 Pool 插值连续
+
+deactivate Pool
+Pool --> Comp: 初始化完成
+
+@enduml

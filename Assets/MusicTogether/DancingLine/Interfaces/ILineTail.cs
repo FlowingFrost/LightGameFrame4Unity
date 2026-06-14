@@ -9,6 +9,7 @@ namespace MusicTogether.DancingLine.Interfaces
     public interface ILineTail
     {
         void SetActive(bool active);
+        MotionState GetMotionStateAtTime(Vector3 beginPosition, double deltaTime, IDirection direction);
         MotionState UpdateTail(Vector3 beginPosition, double deltaTime, IDirection direction);
         void DeleteTail();
     }

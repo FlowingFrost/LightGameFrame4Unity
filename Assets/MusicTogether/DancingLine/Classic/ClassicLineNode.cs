@@ -41,14 +41,6 @@ namespace MusicTogether.DancingLine.Classic
         
         //Debug
         [SerializeField] internal string debugInfo;
-        
-        /*public void Init(NodeInputType nodeType, double beginTime, IDirection direction, IPhysicsDetector physicsDetector)
-        {
-            this.nodeType = nodeType;
-            this.beginTime = beginTime;
-            this.direction = direction;
-            this.physicsDetector = physicsDetector;
-        }*/
 
         public void InitMotion(IPhysicsDetector physicsDetector, PhysicsState initialPhysicsState)
         {
@@ -89,7 +81,25 @@ namespace MusicTogether.DancingLine.Classic
             cachedBeginMotionState.ParentSpacePosition = newBeginPosition;
         }
 
-        public MotionState UpdatePosition(double time)
+        public MotionState GetMotionStateAtTime(double time, bool calculatePhysics = true)
+        {
+            var deltaTime = (float)(time - beginTime);
+
+            var headMotion = tail.GetMotionStateAtTime(cachedBeginPosition, deltaTime, direction);
+            headMotion.SelfTransform = transform;
+            
+            
+            
+            
+            //此处未实现物理计算
+            
+            
+            
+            
+            
+            return headMotion;
+        }
+        public MotionState UpdateMotionState(double time)
         {
             cachedTime = time;
             if (hasLimitedLength && cachedTime > endTime)
